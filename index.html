@@ -77,7 +77,9 @@
     background:var(--navy-soft); padding:18px 30px; display:grid; grid-template-columns:repeat(5,1fr); gap:8px;
     border-bottom:1px solid rgba(255,255,255,0.06);
   }
-  .stat{text-align:left;}
+  .stat{text-align:left; cursor:pointer; transition:background .12s; border-radius:10px; padding:4px 6px; margin:-4px -6px;}
+  .stat:hover{background:rgba(255,255,255,0.06);}
+  .stat.active-filter{background:rgba(246,195,67,0.14); box-shadow:inset 0 0 0 1.5px var(--amber);}
   .stat .num{font-family:'Plus Jakarta Sans', sans-serif; font-weight:800; font-size:26px; color:var(--amber); line-height:1;}
   .stat.overdue .num{color:#ff8a7a;}
   .stat .lbl{font-size:10.5px; color:#9aa0b4; text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-top:3px;}
@@ -206,7 +208,7 @@
     <select id="gateSelect" style="width:100%; margin-bottom:10px;"></select>
     <input type="password" id="gatePassword" placeholder="Password" style="width:100%; margin-bottom:10px;" onkeydown="if(event.key==='Enter') setIdentity()">
     <div id="gateError" style="color:var(--red); font-size:13px; margin-bottom:10px; display:none;"></div>
-    <button style="width:100%;" onclick="setIdentity()">Log In →</button>
+    <button id="loginBtn" style="width:100%;" onclick="setIdentity()">Log In →</button>
   </div>
 </div>
 
@@ -226,11 +228,11 @@
 </header>
 
 <div class="stats-strip">
-  <div class="stat"><div class="num" id="statTotal">0</div><div class="lbl">Total Tasks</div></div>
-  <div class="stat"><div class="num" id="statPending">0</div><div class="lbl">Pending</div></div>
-  <div class="stat"><div class="num" id="statProgress">0</div><div class="lbl">In Progress</div></div>
-  <div class="stat"><div class="num" id="statDone">0</div><div class="lbl">Done</div></div>
-  <div class="stat overdue"><div class="num" id="statOverdue">0</div><div class="lbl">Overdue</div></div>
+  <div class="stat" onclick="clickStat('Total')"><div class="num" id="statTotal">0</div><div class="lbl">Total Tasks</div></div>
+  <div class="stat" onclick="clickStat('Pending')"><div class="num" id="statPending">0</div><div class="lbl">Pending</div></div>
+  <div class="stat" onclick="clickStat('In Progress')"><div class="num" id="statProgress">0</div><div class="lbl">In Progress</div></div>
+  <div class="stat" onclick="clickStat('Done')"><div class="num" id="statDone">0</div><div class="lbl">Done</div></div>
+  <div class="stat overdue" onclick="clickStat('Overdue')"><div class="num" id="statOverdue">0</div><div class="lbl">Overdue</div></div>
 </div>
 
 <main>
@@ -243,6 +245,15 @@
         <option value="Pending">Pending</option>
         <option value="In Progress">In Progress</option>
         <option value="Done">Done</option>
+      </select>
+      <select id="filterStage" style="display:none;">
+        <option value="">All Stages</option>
+        <option value="Assigned">Assigned to Designer</option>
+        <option value="Submitted">Awaiting Approval</option>
+        <option value="ChangesRequested">Changes Requested</option>
+        <option value="AwaitingJobID">Awaiting Job ID</option>
+        <option value="InProduction">In Production</option>
+        <option value="Closed">Closed</option>
       </select>
       <input type="text" id="searchBox" placeholder="Search tasks...">
     </div>
@@ -352,6 +363,7 @@
   let users = [];
   let currentView = 'board';
   let activeTaskId = null;
+  let overdueOnly = false;
   const commentsCache = {};
 
   // ============ TOAST ============
@@ -381,7 +393,25 @@
     const errBox = document.getElementById('gateError');
     errBox.style.display = 'none';
     if (!name || !password) { errBox.textContent = 'Naam select karein aur password likhein.'; errBox.style.display = 'block'; return; }
-    const res = await apiPost({ action: 'login', name, password });
+
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true;
+    btn.textContent = 'Logging in...';
+    const slowNotice = setTimeout(() => { btn.textContent = 'Connecting to server...'; }, 3000);
+
+    let res;
+    try {
+      res = await apiPost({ action: 'login', name, password });
+    } catch (err) {
+      clearTimeout(slowNotice);
+      btn.disabled = false; btn.textContent = 'Log In →';
+      errBox.textContent = 'Connection issue — dobara try karein.';
+      errBox.style.display = 'block';
+      return;
+    }
+    clearTimeout(slowNotice);
+    btn.disabled = false; btn.textContent = 'Log In →';
+
     if (!res.success) { errBox.textContent = res.error || 'Login fail ho gaya.'; errBox.style.display = 'block'; return; }
     localStorage.setItem('pb_identity', JSON.stringify({ name: res.name, designation: res.designation }));
     document.getElementById('gatePassword').value = '';
@@ -458,14 +488,43 @@
     const assignee = document.getElementById('filterAssignee').value;
     const project = document.getElementById('filterProject').value;
     const status = document.getElementById('filterStatus').value;
+    const stage = document.getElementById('filterStage').value;
     const search = document.getElementById('searchBox').value.toLowerCase();
     return tasks.filter(t => {
       if (assignee && t.AssignedTo !== assignee) return false;
       if (project && t.Project !== project) return false;
       if (status && t.Status !== status) return false;
+      if (stage && t.Stage !== stage) return false;
+      if (overdueOnly && !isOverdue(t)) return false;
       if (search && !(t.Title || '').toLowerCase().includes(search)) return false;
       return true;
     });
+  }
+
+  // Clicking a stat box in the dark strip toggles it as a quick filter.
+  function clickStat(kind) {
+    const statusSelect = document.getElementById('filterStatus');
+    if (kind === 'Total') {
+      statusSelect.value = '';
+      overdueOnly = false;
+    } else if (kind === 'Overdue') {
+      overdueOnly = !overdueOnly;
+      statusSelect.value = '';
+    } else {
+      overdueOnly = false;
+      statusSelect.value = (statusSelect.value === kind) ? '' : kind;
+    }
+    updateStatActiveClasses();
+    render();
+  }
+
+  function updateStatActiveClasses() {
+    document.querySelectorAll('.stat').forEach(el => el.classList.remove('active-filter'));
+    const statusVal = document.getElementById('filterStatus').value;
+    if (overdueOnly) document.getElementById('statOverdue').closest('.stat').classList.add('active-filter');
+    else if (statusVal === 'Pending') document.getElementById('statPending').closest('.stat').classList.add('active-filter');
+    else if (statusVal === 'In Progress') document.getElementById('statProgress').closest('.stat').classList.add('active-filter');
+    else if (statusVal === 'Done') document.getElementById('statDone').closest('.stat').classList.add('active-filter');
   }
   function isOverdue(t) {
     if (t.Status === 'Done') return false;
@@ -500,6 +559,7 @@
   function render() {
     const filtered = getFilteredTasks();
     renderStats();
+    updateStatActiveClasses();
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('listView').style.display = 'none';
     document.getElementById('designView').style.display = 'none';
@@ -635,6 +695,7 @@
     document.getElementById('viewBoardBtn').classList.toggle('active', v === 'board');
     document.getElementById('viewListBtn').classList.toggle('active', v === 'list');
     document.getElementById('viewDesignBtn').classList.toggle('active', v === 'design');
+    document.getElementById('filterStage').style.display = v === 'design' ? 'inline-block' : 'none';
     render();
   }
 
@@ -877,7 +938,7 @@
   });
 
   // ============ FILTER LISTENERS ============
-  ['filterAssignee','filterProject','filterStatus'].forEach(id => document.getElementById(id).addEventListener('change', render));
+  ['filterAssignee','filterProject','filterStatus','filterStage'].forEach(id => document.getElementById(id).addEventListener('change', render));
   document.getElementById('searchBox').addEventListener('input', render);
 
   // ============ INIT ============
