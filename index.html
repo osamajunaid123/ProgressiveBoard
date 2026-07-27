@@ -4,192 +4,248 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Progressive Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#1c2430;
-    --paper:#f6f4ef;
-    --panel:#ffffff;
-    --line:#e2ddd2;
-    --muted:#767066;
-    --accent:#b8562f;
-    --accent-soft:#f3e2d6;
-    --good:#3f7f5a;
-    --good-soft:#e2efe7;
-    --warn:#b8862f;
-    --warn-soft:#f4ead2;
-    --bad:#b3402f;
-    --bad-soft:#f6ded9;
-    --radius:10px;
-    font-size:15px;
+    --paper:#ece5d3;
+    --paper-dark:#ddd2b4;
+    --card:#fbf8f0;
+    --ink:#1c1a15;
+    --ink-soft:#5d574a;
+    --line:#cabd9a;
+    --line-soft:#ddd3b8;
+    --teal:#0d6e5c;
+    --teal-soft:#d9ece6;
+    --amber:#b9791d;
+    --amber-soft:#f3e3c4;
+    --red:#a3392a;
+    --red-soft:#f2ddd6;
+    --radius:4px;
+    --radius-lg:10px;
+    --shadow: 0 1px 2px rgba(28,26,21,0.06), 0 6px 16px rgba(28,26,21,0.06);
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
     background:var(--paper);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(28,26,21,0.05) 1px, transparent 0);
+    background-size: 22px 22px;
     color:var(--ink);
-    font-family:'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-    line-height:1.4;
+    font-family:'Inter', -apple-system, sans-serif;
+    line-height:1.45;
   }
+  .mono{font-family:'Space Mono', monospace;}
+  .display{font-family:'Bebas Neue', sans-serif; letter-spacing:0.03em;}
+
+  ::selection{background:var(--amber-soft);}
+
   header{
     display:flex; align-items:center; justify-content:space-between;
-    padding:18px 28px; background:var(--panel); border-bottom:1px solid var(--line);
+    padding:16px 30px; background:var(--paper-dark); border-bottom:2px solid var(--ink);
     position:sticky; top:0; z-index:20;
   }
-  .brand{display:flex; align-items:center; gap:10px;}
-  .brand .mark{
-    width:30px; height:30px; border-radius:8px; background:var(--accent);
-    display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:14px;
+  .brand{display:flex; align-items:center; gap:12px;}
+  .stamp{
+    width:42px; height:42px; border-radius:50%; border:2.5px solid var(--ink);
+    display:flex; align-items:center; justify-content:center; color:var(--ink);
+    font-family:'Bebas Neue', sans-serif; font-size:16px; transform:rotate(-8deg);
+    flex-shrink:0;
   }
-  .brand h1{font-size:19px; margin:0; letter-spacing:-0.01em;}
-  .brand .tag{font-size:12px; color:var(--muted); margin-top:1px;}
+  .brand h1{font-family:'Bebas Neue', sans-serif; font-size:28px; margin:0; letter-spacing:0.04em; line-height:1;}
+  .brand .tag{font-size:11.5px; color:var(--ink-soft); margin-top:2px; font-family:'Space Mono', monospace; letter-spacing:0.02em;}
   .who{display:flex; align-items:center; gap:10px;}
+  .who .name{font-size:13px; font-family:'Space Mono', monospace; color:var(--ink-soft);}
+
   select, input, textarea, button{
-    font-family:inherit; font-size:14px; border-radius:8px; border:1px solid var(--line);
-    background:#fff; color:var(--ink); padding:8px 12px;
+    font-family:'Inter', sans-serif; font-size:14px; border-radius:var(--radius); border:1.5px solid var(--line);
+    background:var(--card); color:var(--ink); padding:8px 12px;
   }
-  button{cursor:pointer; border:1px solid var(--ink); background:var(--ink); color:#fff; font-weight:600;}
-  button.secondary{background:#fff; color:var(--ink); border:1px solid var(--line); font-weight:500;}
+  button{cursor:pointer; border:1.5px solid var(--ink); background:var(--ink); color:var(--paper); font-weight:600; transition:transform .1s;}
+  button:active{transform:translateY(1px);}
+  button.secondary{background:var(--card); color:var(--ink); border:1.5px solid var(--line);}
+  button.danger{background:var(--card); color:var(--red); border:1.5px solid var(--red-soft);}
   button:disabled{opacity:0.5; cursor:not-allowed;}
+  button.small{padding:6px 10px; font-size:12px;}
 
-  main{max-width:1180px; margin:0 auto; padding:24px 28px 60px;}
+  main{max-width:1200px; margin:0 auto; padding:26px 30px 70px;}
 
-  .stats{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:22px;}
-  .stat{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px;}
-  .stat .num{font-size:26px; font-weight:700;}
-  .stat .lbl{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;}
-  .stat.overdue .num{color:var(--bad);}
-
-  .toolbar{
-    display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
-    margin-bottom:18px;
+  .stats{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:24px;}
+  .stat{
+    background:var(--card); border:1.5px solid var(--line); border-radius:var(--radius-lg); padding:14px 16px;
+    box-shadow:var(--shadow);
   }
+  .stat .num{font-family:'Bebas Neue', sans-serif; font-size:32px; line-height:1;}
+  .stat .lbl{font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; font-family:'Space Mono', monospace;}
+  .stat.overdue .num{color:var(--red);}
+
+  .toolbar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:18px;}
   .filters{display:flex; gap:8px; flex-wrap:wrap;}
-  .view-toggle{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
-  .view-toggle button{border:none; border-radius:0; background:#fff; color:var(--ink); font-weight:500;}
-  .view-toggle button.active{background:var(--ink); color:#fff;}
+  .view-toggle{display:flex; border:1.5px solid var(--ink); border-radius:var(--radius); overflow:hidden;}
+  .view-toggle button{border:none; border-radius:0; background:var(--card); color:var(--ink); font-weight:600; font-size:13px;}
+  .view-toggle button.active{background:var(--ink); color:var(--paper);}
 
-  .board{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
-  .col{background:transparent;}
+  .board{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
   .col h3{
-    font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);
-    display:flex; align-items:center; justify-content:space-between; margin:0 0 10px 2px;
+    font-family:'Bebas Neue', sans-serif; font-size:17px; letter-spacing:.04em; color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:space-between; margin:0 0 12px 2px; border-bottom:2px dashed var(--line); padding-bottom:6px;
   }
-  .col h3 .count{background:var(--line); color:var(--ink); border-radius:20px; padding:1px 8px; font-size:12px;}
+  .col h3 .count{background:var(--ink); color:var(--paper); border-radius:20px; padding:1px 9px; font-size:12px; font-family:'Space Mono', monospace;}
   .cards{display:flex; flex-direction:column; gap:10px; min-height:40px;}
 
-  .card{
-    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
-    padding:12px 14px; cursor:pointer; transition:box-shadow .15s, transform .15s;
+  .ticket{
+    background:var(--card); border:1.5px solid var(--line); border-radius:var(--radius);
+    padding:13px 15px; cursor:pointer; position:relative; box-shadow:var(--shadow);
+    transition:transform .12s, box-shadow .12s; border-left:4px solid var(--line);
   }
-  .card:hover{box-shadow:0 4px 14px rgba(28,36,48,0.08); transform:translateY(-1px);}
-  .card .top-row{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
-  .card .title{font-weight:600; font-size:14.5px;}
-  .card .meta{margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;}
-  .badge{font-size:11px; padding:2px 8px; border-radius:20px; font-weight:600;}
-  .badge.project{background:var(--accent-soft); color:var(--accent);}
-  .badge.priority-High{background:var(--bad-soft); color:var(--bad);}
-  .badge.priority-Normal{background:#eee; color:var(--muted);}
-  .badge.priority-Low{background:var(--good-soft); color:var(--good);}
-  .due{font-size:12px; color:var(--muted);}
-  .due.overdue{color:var(--bad); font-weight:700;}
-  .assignee{font-size:12px; color:var(--ink); background:#f0ede6; padding:2px 8px; border-radius:20px;}
+  .ticket:hover{transform:translateY(-2px); box-shadow:0 4px 20px rgba(28,26,21,0.12);}
+  .ticket.pr-High{border-left-color:var(--red);}
+  .ticket.pr-Normal{border-left-color:var(--amber);}
+  .ticket.pr-Low{border-left-color:var(--teal);}
+  .ticket .top-row{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+  .ticket .title{font-weight:700; font-size:14.5px;}
+  .ticket .meta{margin-top:9px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;}
+  .chip{font-size:10.5px; padding:2px 8px; border-radius:20px; font-weight:700; font-family:'Space Mono', monospace; letter-spacing:.01em;}
+  .chip.project{background:var(--teal-soft); color:var(--teal);}
+  .chip.assignee{background:var(--paper-dark); color:var(--ink);}
+  .due-line{font-size:11.5px; color:var(--ink-soft); margin-top:8px; font-family:'Space Mono', monospace;}
+  .due-line.overdue{color:var(--red); font-weight:700;}
 
-  .list-table{width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
-  .list-table th, .list-table td{padding:10px 12px; text-align:left; border-bottom:1px solid var(--line); font-size:13.5px;}
-  .list-table th{background:#faf8f3; font-size:11.5px; text-transform:uppercase; color:var(--muted); letter-spacing:.03em;}
-  .list-table tr:last-child td{border-bottom:none;}
-  .list-table tr:hover{background:#faf8f3; cursor:pointer;}
-  .status-pill{font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px;}
-  .status-Pending{background:var(--warn-soft); color:var(--warn);}
-  .status-In-Progress{background:#dfe6f3; color:#3a5a9c;}
-  .status-Done{background:var(--good-soft); color:var(--good);}
+  .ledger{width:100%; border-collapse:collapse; background:var(--card); border:1.5px solid var(--line); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow);}
+  .ledger th, .ledger td{padding:11px 13px; text-align:left; border-bottom:1px solid var(--line-soft); font-size:13.5px;}
+  .ledger th{background:var(--paper-dark); font-size:10.5px; text-transform:uppercase; color:var(--ink-soft); letter-spacing:.05em; font-family:'Space Mono', monospace;}
+  .ledger tr:last-child td{border-bottom:none;}
+  .ledger tbody tr:hover{background:var(--paper); cursor:pointer;}
+  .pill{font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:20px; font-family:'Space Mono', monospace;}
+  .pill.Pending{background:var(--amber-soft); color:var(--amber);}
+  .pill.In-Progress{background:#dbe6f0; color:#2f5d85;}
+  .pill.Done{background:var(--teal-soft); color:var(--teal);}
 
-  .empty{text-align:center; color:var(--muted); padding:40px 0; font-size:14px;}
+  .empty{text-align:center; color:var(--ink-soft); padding:44px 0; font-size:14px; font-family:'Space Mono', monospace;}
 
-  /* Modal */
-  .overlay{
-    position:fixed; inset:0; background:rgba(20,20,18,0.45); display:none;
-    align-items:center; justify-content:center; z-index:50; padding:20px;
+  /* Design job routing slip */
+  .slip{
+    background:var(--card); border:1.5px solid var(--line); border-radius:var(--radius-lg);
+    padding:16px 18px; cursor:pointer; box-shadow:var(--shadow); transition:transform .12s;
   }
+  .slip:hover{transform:translateY(-2px);}
+  .slip .top-row{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px;}
+  .slip .title{font-weight:700; font-size:15px;}
+  .stepper{display:flex; align-items:center; margin:10px 0 6px;}
+  .step{display:flex; flex-direction:column; align-items:center; flex:1; position:relative;}
+  .step .dot{
+    width:20px; height:20px; border-radius:50%; border:2.5px solid var(--line); background:var(--card);
+    display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; z-index:2;
+  }
+  .step .lbl{font-size:9.5px; margin-top:5px; color:var(--ink-soft); font-family:'Space Mono', monospace; text-transform:uppercase; letter-spacing:.02em; text-align:center;}
+  .step .bar{position:absolute; top:9px; left:50%; width:100%; height:2.5px; background:var(--line); z-index:1;}
+  .step:first-child .bar{display:none;}
+  .step.done .dot{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .step.done .bar{background:var(--teal);}
+  .step.current .dot{background:var(--amber); border-color:var(--amber); color:#fff; box-shadow:0 0 0 4px var(--amber-soft);}
+  .step.revision .dot{background:var(--red); border-color:var(--red); color:#fff;}
+  .slip-meta{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
+  .slip-sla{margin-top:8px; font-size:12px; font-family:'Space Mono', monospace;}
+  .slip-sla.overdue{color:var(--red); font-weight:700;}
+
+  /* Modals */
+  .overlay{position:fixed; inset:0; background:rgba(20,18,14,0.5); display:none; align-items:center; justify-content:center; z-index:50; padding:20px;}
   .overlay.show{display:flex;}
   .modal{
-    background:#fff; border-radius:14px; width:100%; max-width:560px; max-height:88vh;
-    overflow-y:auto; padding:24px; position:relative;
+    background:var(--card); border-radius:14px; width:100%; max-width:580px; max-height:88vh;
+    overflow-y:auto; padding:26px; position:relative; border:1.5px solid var(--ink);
   }
-  .modal h2{margin:0 0 16px; font-size:18px;}
-  .modal .close{position:absolute; top:16px; right:18px; background:none; border:none; color:var(--muted); font-size:20px; padding:2px 6px;}
+  .modal h2{font-family:'Bebas Neue', sans-serif; font-size:24px; letter-spacing:.02em; margin:0 0 4px;}
+  .modal .close{position:absolute; top:16px; right:18px; background:none; border:none; color:var(--ink-soft); font-size:22px; padding:2px 8px;}
   .field{margin-bottom:14px;}
-  .field label{display:block; font-size:12.5px; font-weight:600; color:var(--muted); margin-bottom:5px;}
+  .field label{display:block; font-size:11.5px; font-weight:700; color:var(--ink-soft); margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em; font-family:'Space Mono', monospace;}
   .field input, .field select, .field textarea{width:100%;}
   .field textarea{resize:vertical; min-height:60px;}
   .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
-  .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:18px;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:20px;}
 
-  .detail-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px;}
+  .detail-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:6px;}
   .detail-meta{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 16px;}
-  .detail-desc{font-size:14px; color:#3a3a36; white-space:pre-wrap; margin-bottom:16px;}
-  .status-buttons{display:flex; gap:8px; margin-bottom:18px;}
-  .status-buttons button{flex:1; font-size:13px;}
-  .status-buttons button.current{outline:2px solid var(--ink); outline-offset:1px;}
+  .detail-desc{font-size:14px; color:var(--ink); white-space:pre-wrap; margin-bottom:16px;}
 
-  .comments{border-top:1px solid var(--line); padding-top:14px;}
-  .comments h4{margin:0 0 10px; font-size:13px; text-transform:uppercase; color:var(--muted); letter-spacing:.03em;}
-  .comment{background:#faf8f3; border-radius:8px; padding:8px 10px; margin-bottom:8px; font-size:13.5px;}
+  .comments{border-top:2px dashed var(--line); padding-top:14px; margin-top:6px;}
+  .comments h4{font-family:'Space Mono', monospace; margin:0 0 10px; font-size:11.5px; text-transform:uppercase; color:var(--ink-soft); letter-spacing:.05em;}
+  .comment{background:var(--paper); border-radius:8px; padding:9px 11px; margin-bottom:8px; font-size:13.5px; border-left:3px solid var(--line);}
   .comment .cauthor{font-weight:700; font-size:12.5px;}
-  .comment .ctime{font-size:11px; color:var(--muted); margin-left:6px;}
+  .comment .ctime{font-size:10.5px; color:var(--ink-soft); margin-left:6px; font-family:'Space Mono', monospace;}
   .add-comment{display:flex; gap:8px; margin-top:10px;}
   .add-comment input{flex:1;}
 
-  .name-gate{
-    position:fixed; inset:0; background:var(--paper); display:flex; align-items:center; justify-content:center; z-index:100;
+  .name-gate{position:fixed; inset:0; background:var(--paper); display:flex; align-items:center; justify-content:center; z-index:100;
+    background-image: radial-gradient(circle at 1px 1px, rgba(28,26,21,0.06) 1px, transparent 0); background-size:22px 22px;}
+  .ticket-card{
+    background:var(--card); border:2px solid var(--ink); border-radius:10px; padding:32px; width:100%; max-width:380px; text-align:center;
+    position:relative; box-shadow: 0 10px 30px rgba(28,26,21,0.15);
   }
-  .name-gate .box{background:#fff; border:1px solid var(--line); border-radius:14px; padding:28px; width:100%; max-width:360px; text-align:center;}
-  .name-gate h2{margin-top:0;}
+  .ticket-card::before, .ticket-card::after{
+    content:''; position:absolute; width:20px; height:20px; background:var(--paper); border-radius:50%; top:50%; margin-top:-10px;
+  }
+  .ticket-card::before{left:-10px;}
+  .ticket-card::after{right:-10px;}
+  .ticket-card h2{font-family:'Bebas Neue', sans-serif; font-size:30px; letter-spacing:.05em; margin:0 0 2px;}
+  .ticket-card .sub{font-size:12px; color:var(--ink-soft); font-family:'Space Mono', monospace; margin-bottom:20px;}
+
+  .toast{
+    position:fixed; bottom:22px; right:22px; background:var(--ink); color:var(--paper); padding:11px 16px; border-radius:8px;
+    font-size:13px; z-index:200; box-shadow:0 6px 20px rgba(0,0,0,0.25); opacity:0; transform:translateY(8px); transition:all .25s;
+    pointer-events:none; max-width:320px;
+  }
+  .toast.show{opacity:1; transform:translateY(0);}
+  .toast.error{background:var(--red);}
 
   @media (max-width:800px){
     .board{grid-template-columns:1fr;}
     .stats{grid-template-columns:repeat(2,1fr);}
     header{padding:14px 16px;}
-    main{padding:16px 16px 60px;}
+    main{padding:16px 16px 70px;}
+    .row2{grid-template-columns:1fr;}
   }
 </style>
 </head>
 <body>
 
 <div class="name-gate" id="nameGate">
-  <div class="box">
+  <div class="ticket-card">
     <h2>Progressive Board</h2>
-    <p style="color:var(--muted); font-size:14px; margin-bottom:16px;">Apna naam select karein aur password enter karein</p>
+    <div class="sub">JOB TICKET · TEAM ACCESS</div>
     <select id="gateSelect" style="width:100%; margin-bottom:10px;"></select>
     <input type="password" id="gatePassword" placeholder="Password" style="width:100%; margin-bottom:10px;" onkeydown="if(event.key==='Enter') setIdentity()">
-    <div id="gateError" style="color:var(--bad); font-size:13px; margin-bottom:10px; display:none;"></div>
-    <button style="width:100%;" onclick="setIdentity()">Login</button>
+    <div id="gateError" style="color:var(--red); font-size:13px; margin-bottom:10px; display:none;"></div>
+    <button style="width:100%;" onclick="setIdentity()">Clock In</button>
   </div>
 </div>
 
 <header>
   <div class="brand">
-    <div class="mark">P</div>
+    <div class="stamp">PB</div>
     <div>
       <h1>Progressive Board</h1>
-      <div class="tag">Progressive International — Team Task Tracker</div>
+      <div class="tag">TASK &amp; JOB TRACKING — PROGRESSIVE INTERNATIONAL</div>
     </div>
   </div>
   <div class="who">
-    <span id="whoAmI" style="font-size:13px; color:var(--muted);"></span>
-    <button class="secondary" onclick="logout()" style="padding:6px 10px; font-size:12px;">Logout</button>
+    <span class="name" id="whoAmI"></span>
+    <button class="secondary small" onclick="logout()">Logout</button>
     <button onclick="openNewTaskModal()">+ New Task</button>
   </div>
 </header>
 
 <main>
   <div class="stats">
-    <div class="stat"><div class="num" id="statTotal">0</div><div class="lbl">Total</div></div>
+    <div class="stat"><div class="num">0</div><div class="lbl">Total</div></div>
     <div class="stat"><div class="num" id="statPending">0</div><div class="lbl">Pending</div></div>
     <div class="stat"><div class="num" id="statProgress">0</div><div class="lbl">In Progress</div></div>
     <div class="stat"><div class="num" id="statDone">0</div><div class="lbl">Done</div></div>
     <div class="stat overdue"><div class="num" id="statOverdue">0</div><div class="lbl">Overdue</div></div>
   </div>
+  <div class="stats" style="display:none;"><div class="num" id="statTotal"></div></div>
 
   <div class="toolbar">
     <div class="filters">
@@ -205,16 +261,14 @@
     </div>
     <div class="view-toggle">
       <button id="viewBoardBtn" class="active" onclick="setView('board')">Board</button>
-      <button id="viewListBtn" onclick="setView('list')">List</button>
+      <button id="viewListBtn" onclick="setView('list')">Ledger</button>
       <button id="viewDesignBtn" onclick="setView('design')">Design Jobs</button>
     </div>
   </div>
 
   <div id="boardView" class="board"></div>
-  <table id="listView" class="list-table" style="display:none;">
-    <thead>
-      <tr><th>Title</th><th>Project</th><th>Assigned To</th><th>Priority</th><th>Due</th><th>Status</th></tr>
-    </thead>
+  <table id="listView" class="ledger" style="display:none;">
+    <thead><tr><th>Title</th><th>Project</th><th>Assigned To</th><th>Priority</th><th>Due</th><th>Status</th></tr></thead>
     <tbody id="listBody"></tbody>
   </table>
   <div id="designView" style="display:none;"></div>
@@ -224,55 +278,26 @@
 <div class="overlay" id="newTaskOverlay">
   <div class="modal">
     <button class="close" onclick="closeModal('newTaskOverlay')">&times;</button>
-    <h2>New Task</h2>
+    <h2>New Job Ticket</h2>
     <div class="field">
-      <label>Task Type</label>
+      <label>Type</label>
       <select id="ntType">
         <option value="General">General Task</option>
         <option value="DesignJob">Design Job (artwork → approval → block production)</option>
       </select>
     </div>
-    <div class="field">
-      <label>Title</label>
-      <input type="text" id="ntTitle" placeholder="e.g. Design Ramzan campaign banner">
-    </div>
-    <div class="field">
-      <label>Description</label>
-      <textarea id="ntDesc" placeholder="Details, links, references..."></textarea>
+    <div class="field"><label>Title</label><input type="text" id="ntTitle" placeholder="e.g. Design Ramzan campaign banner"></div>
+    <div class="field"><label>Description</label><textarea id="ntDesc" placeholder="Details, links, references..."></textarea></div>
+    <div class="row2">
+      <div class="field"><label>Assigned By</label><select id="ntAssignBy"></select></div>
+      <div class="field"><label>Assign To</label><select id="ntAssignTo"></select></div>
     </div>
     <div class="row2">
-      <div class="field">
-        <label>Assigned By</label>
-        <select id="ntAssignBy"></select>
-      </div>
-      <div class="field">
-        <label>Assign To</label>
-        <select id="ntAssignTo"></select>
-      </div>
+      <div class="field"><label>Project / Category</label><input type="text" id="ntProject" placeholder="e.g. Marketing, ZFM, Sales"></div>
+      <div class="field"><label>Priority</label><select id="ntPriority"><option>Normal</option><option>High</option><option>Low</option></select></div>
     </div>
-    <div class="row2">
-      <div class="field">
-        <label>Project / Category</label>
-        <input type="text" id="ntProject" placeholder="e.g. Marketing, ZFM, Sales">
-      </div>
-      <div class="field">
-        <label>Priority</label>
-        <select id="ntPriority">
-          <option>Normal</option>
-          <option>High</option>
-          <option>Low</option>
-        </select>
-      </div>
-    </div>
-    <div class="field">
-      <label>Due Date</label>
-      <input type="date" id="ntDueDate">
-    </div>
-    <div class="field">
-      <label>Attach file (image or PDF) — optional</label>
-      <input type="file" id="ntAttachment" accept="image/*,.pdf">
-      <div id="ntAttachStatus" style="font-size:12px; color:var(--muted); margin-top:4px;"></div>
-    </div>
+    <div class="field"><label>Due Date</label><input type="date" id="ntDueDate"></div>
+    <div class="field"><label>Reference link (optional)</label><input type="text" id="ntAttachment" placeholder="Paste a Drive/WhatsApp/image link"></div>
     <div class="modal-actions">
       <button class="secondary" onclick="closeModal('newTaskOverlay')">Cancel</button>
       <button id="ntSubmitBtn" onclick="submitNewTask()">Create Task</button>
@@ -287,52 +312,30 @@
     <div class="detail-head">
       <h2 id="dTitle"></h2>
       <div style="display:flex; gap:6px; flex-shrink:0;">
-        <button class="secondary" onclick="toggleEditMode()" style="padding:6px 10px; font-size:12px;">Edit</button>
-        <button class="secondary" onclick="deleteCurrentTask()" style="padding:6px 10px; font-size:12px; color:var(--bad); border-color:var(--bad-soft);">Delete</button>
+        <button class="secondary small" onclick="toggleEditMode()">Edit</button>
+        <button class="danger small" onclick="deleteCurrentTask()">Delete</button>
       </div>
     </div>
     <div id="dViewMode">
       <div class="detail-meta">
-        <span class="badge project" id="dProject"></span>
-        <span class="badge" id="dPriority"></span>
-        <span class="assignee" id="dAssignee"></span>
-        <span class="due" id="dDue"></span>
+        <span class="chip project" id="dProject"></span>
+        <span class="chip assignee" id="dPriority"></span>
+        <span class="chip assignee" id="dAssignee"></span>
+        <span class="due-line" id="dDue"></span>
       </div>
       <div class="detail-desc" id="dDesc"></div>
       <div id="dActionArea"></div>
     </div>
     <div id="dEditForm" style="display:none;">
-      <div class="field">
-        <label>Title</label>
-        <input type="text" id="edTitle">
-      </div>
-      <div class="field">
-        <label>Description</label>
-        <textarea id="edDesc"></textarea>
+      <div class="field"><label>Title</label><input type="text" id="edTitle"></div>
+      <div class="field"><label>Description</label><textarea id="edDesc"></textarea></div>
+      <div class="row2">
+        <div class="field"><label>Project</label><input type="text" id="edProject"></div>
+        <div class="field"><label>Priority</label><select id="edPriority"><option>Normal</option><option>High</option><option>Low</option></select></div>
       </div>
       <div class="row2">
-        <div class="field">
-          <label>Project / Category</label>
-          <input type="text" id="edProject">
-        </div>
-        <div class="field">
-          <label>Priority</label>
-          <select id="edPriority">
-            <option>Normal</option>
-            <option>High</option>
-            <option>Low</option>
-          </select>
-        </div>
-      </div>
-      <div class="row2">
-        <div class="field">
-          <label>Assign To</label>
-          <select id="edAssignTo"></select>
-        </div>
-        <div class="field">
-          <label>Due Date</label>
-          <input type="date" id="edDueDate">
-        </div>
+        <div class="field"><label>Assign To</label><select id="edAssignTo"></select></div>
+        <div class="field"><label>Due Date</label><input type="date" id="edDueDate"></div>
       </div>
       <div class="modal-actions">
         <button class="secondary" onclick="cancelEdit()">Cancel</button>
@@ -340,20 +343,21 @@
       </div>
     </div>
     <div class="comments">
-      <h4>Comments</h4>
+      <h4>Log / Comments</h4>
       <div id="dComments"></div>
       <div class="add-comment">
         <input type="text" id="dNewComment" placeholder="Add a comment...">
-        <input type="file" id="dCommentFile" accept="image/*,.pdf" style="max-width:140px;">
+        <input type="text" id="dCommentLink" placeholder="link (optional)" style="max-width:150px;">
         <button onclick="submitComment()">Send</button>
       </div>
     </div>
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
   // ============ CONFIG ============
-  // Paste your Apps Script Web App URL here (Deploy > New deployment > Web app > Execute as: Me > Who has access: Anyone with the link)
   const API_URL = 'https://script.google.com/macros/s/AKfycbwkIoqHjCdEDo0d2q4IV7B81VKtX5tcEJB3QQFD3extPHfbMPedMPH38slKIO7FvekC/exec';
 
   // ============ STATE ============
@@ -361,6 +365,17 @@
   let users = [];
   let currentView = 'board';
   let activeTaskId = null;
+  const commentsCache = {}; // taskId -> array, kept locally for instant re-render
+
+  // ============ TOAST ============
+  let toastTimer = null;
+  function showToast(msg, isError) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  }
 
   // ============ IDENTITY / LOGIN ============
   function initIdentity() {
@@ -373,38 +388,24 @@
       document.getElementById('nameGate').style.display = 'flex';
     }
   }
-
   async function setIdentity() {
     const name = document.getElementById('gateSelect').value;
     const password = document.getElementById('gatePassword').value;
     const errBox = document.getElementById('gateError');
     errBox.style.display = 'none';
-
-    if (!name || !password) {
-      errBox.textContent = 'Naam select karein aur password likhein.';
-      errBox.style.display = 'block';
-      return;
-    }
-
+    if (!name || !password) { errBox.textContent = 'Naam select karein aur password likhein.'; errBox.style.display = 'block'; return; }
     const res = await apiPost({ action: 'login', name, password });
-    if (!res.success) {
-      errBox.textContent = res.error || 'Login fail ho gaya.';
-      errBox.style.display = 'block';
-      return;
-    }
-
+    if (!res.success) { errBox.textContent = res.error || 'Login fail ho gaya.'; errBox.style.display = 'block'; return; }
     localStorage.setItem('pb_identity', JSON.stringify({ name: res.name, designation: res.designation }));
     document.getElementById('gatePassword').value = '';
     document.getElementById('nameGate').style.display = 'none';
     document.getElementById('whoAmI').textContent = res.name + (res.designation ? ' · ' + res.designation : '');
   }
-
   function logout() {
     localStorage.removeItem('pb_identity');
     document.getElementById('nameGate').style.display = 'flex';
     document.getElementById('whoAmI').textContent = '';
   }
-
   function myName() {
     const saved = localStorage.getItem('pb_identity');
     return saved ? JSON.parse(saved).name : '';
@@ -417,7 +418,6 @@
     return res.json();
   }
   async function apiPost(payload) {
-    // text/plain avoids a CORS preflight against Apps Script
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -425,30 +425,14 @@
     });
     return res.json();
   }
-
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  // Uploads a <input type=file> selection to Drive via the backend. Returns the
-  // file URL, or null if no file was selected. Shows a small status line while working.
-  async function uploadAttachment(inputEl, statusEl) {
-    const file = inputEl.files[0];
-    if (!file) return null;
-    if (statusEl) statusEl.textContent = 'Uploading ' + file.name + '...';
-    const data = await fileToBase64(file);
-    const res = await apiPost({ action: 'uploadFile', data, fileName: file.name, mimeType: file.type });
-    if (statusEl) statusEl.textContent = res.success ? ('Attached: ' + file.name) : (res.error || 'Upload failed');
-    return res.success ? res.url : null;
+  // Fire a backend call in the background without blocking the UI. Shows a toast on failure.
+  function bg(promise, failMsg) {
+    promise.then(res => { if (res && res.error) showToast(failMsg + ': ' + res.error, true); })
+           .catch(() => showToast(failMsg + ' — connection issue, will retry on next sync', true));
   }
 
   // ============ LOAD DATA ============
-  async function loadAll() {
+  async function loadAll(showSpinnerToast) {
     const [taskRes, userRes] = await Promise.all([apiGet('getTasks'), apiGet('getUsers')]);
     tasks = taskRes.tasks || [];
     users = userRes.users || [];
@@ -477,9 +461,10 @@
 
   function populateProjectFilter() {
     const filterP = document.getElementById('filterProject');
+    const current = filterP.value;
     const projects = [...new Set(tasks.map(t => t.Project).filter(Boolean))];
-    filterP.innerHTML = '<option value="">All Projects</option>' +
-      projects.map(p => `<option value="${p}">${p}</option>`).join('');
+    filterP.innerHTML = '<option value="">All Projects</option>' + projects.map(p => `<option value="${p}">${p}</option>`).join('');
+    filterP.value = current;
   }
 
   // ============ FILTERING ============
@@ -499,16 +484,35 @@
 
   function isOverdue(t) {
     if (t.Status === 'Done') return false;
-    const d = new Date(t.DueDate);
-    d.setHours(0,0,0,0);
+    const d = new Date(t.DueDate); d.setHours(0,0,0,0);
     const today = new Date(); today.setHours(0,0,0,0);
     return d < today;
   }
-
   function fmtDate(d) {
     const dt = new Date(d);
     if (isNaN(dt)) return '';
     return dt.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  }
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  function toDateInputValue(d) {
+    const dt = new Date(d);
+    if (isNaN(dt)) return '';
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  }
+
+  // ============ LOCAL (OPTIMISTIC) STATE HELPERS ============
+  function patchLocalTask(id, patch) {
+    const idx = tasks.findIndex(t => t.ID === id);
+    if (idx > -1) tasks[idx] = { ...tasks[idx], ...patch };
+  }
+  function removeLocalTask(id) {
+    tasks = tasks.filter(t => t.ID !== id);
+  }
+  function addLocalTask(task) {
+    tasks.unshift(task);
   }
 
   // ============ RENDER ============
@@ -518,7 +522,6 @@
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('listView').style.display = 'none';
     document.getElementById('designView').style.display = 'none';
-
     if (currentView === 'board') renderBoard(filtered.filter(t => t.TaskType !== 'DesignJob'));
     else if (currentView === 'list') renderList(filtered.filter(t => t.TaskType !== 'DesignJob'));
     else renderDesignView(filtered.filter(t => t.TaskType === 'DesignJob'));
@@ -533,21 +536,16 @@
     document.getElementById('statOverdue').textContent = general.filter(isOverdue).length;
   }
 
-  function taskCardHTML(t) {
+  function ticketHTML(t) {
     const overdue = isOverdue(t);
     return `
-      <div class="card" onclick="openDetail('${t.ID}')">
-        <div class="top-row">
-          <div class="title">${escapeHtml(t.Title)}</div>
-        </div>
+      <div class="ticket pr-${t.Priority}" onclick="openDetail('${t.ID}')">
+        <div class="top-row"><div class="title">${escapeHtml(t.Title)}</div></div>
         <div class="meta">
-          ${t.Project ? `<span class="badge project">${escapeHtml(t.Project)}</span>` : ''}
-          <span class="badge priority-${t.Priority}">${t.Priority}</span>
-          <span class="assignee">${escapeHtml(t.AssignedTo)}</span>
+          ${t.Project ? `<span class="chip project">${escapeHtml(t.Project)}</span>` : ''}
+          <span class="chip assignee">${escapeHtml(t.AssignedTo)}</span>
         </div>
-        <div class="due ${overdue ? 'overdue' : ''}" style="margin-top:8px;">
-          ${overdue ? 'Overdue — ' : 'Due '} ${fmtDate(t.DueDate)}
-        </div>
+        <div class="due-line ${overdue ? 'overdue' : ''}">${overdue ? 'OVERDUE · ' : 'DUE '}${fmtDate(t.DueDate)}</div>
       </div>`;
   }
 
@@ -556,26 +554,18 @@
     list.forEach(t => { if (cols[t.Status]) cols[t.Status].push(t); });
     const board = document.getElementById('boardView');
     board.style.display = 'grid';
-    document.getElementById('listView').style.display = 'none';
-    board.innerHTML = Object.keys(cols).map(statusKey => `
+    board.innerHTML = Object.keys(cols).map(k => `
       <div class="col">
-        <h3>${statusKey} <span class="count">${cols[statusKey].length}</span></h3>
-        <div class="cards">
-          ${cols[statusKey].length ? cols[statusKey].map(taskCardHTML).join('') : '<div class="empty">No tasks</div>'}
-        </div>
-      </div>
-    `).join('');
+        <h3>${k} <span class="count">${cols[k].length}</span></h3>
+        <div class="cards">${cols[k].length ? cols[k].map(ticketHTML).join('') : '<div class="empty">— empty —</div>'}</div>
+      </div>`).join('');
   }
 
   function renderList(list) {
-    document.getElementById('boardView').style.display = 'none';
     const table = document.getElementById('listView');
     table.style.display = 'table';
     const body = document.getElementById('listBody');
-    if (!list.length) {
-      body.innerHTML = `<tr><td colspan="6" class="empty">No tasks match these filters</td></tr>`;
-      return;
-    }
+    if (!list.length) { body.innerHTML = `<tr><td colspan="6" class="empty">No tasks match these filters</td></tr>`; return; }
     body.innerHTML = list.map(t => `
       <tr onclick="openDetail('${t.ID}')">
         <td>${escapeHtml(t.Title)}</td>
@@ -583,51 +573,41 @@
         <td>${escapeHtml(t.AssignedTo)}</td>
         <td>${t.Priority}</td>
         <td class="${isOverdue(t) ? 'overdue' : ''}">${fmtDate(t.DueDate)}</td>
-        <td><span class="status-pill status-${t.Status.replace(' ','-')}">${t.Status}</span></td>
-      </tr>
-    `).join('');
+        <td><span class="pill ${t.Status.replace(' ','-')}">${t.Status}</span></td>
+      </tr>`).join('');
   }
 
+  // ---- Design Job stepper ----
+  const STEPS = ['Design','Approval','Job ID','Production','Closed'];
+  function stageNodeIndex(stage) {
+    if (stage === 'Assigned' || stage === 'ChangesRequested') return 0;
+    if (stage === 'Submitted') return 1;
+    if (stage === 'AwaitingJobID') return 2;
+    if (stage === 'InProduction') return 3;
+    if (stage === 'Closed') return 4;
+    return 0;
+  }
   const STAGE_LABELS = {
-    'Assigned': 'Assigned to Designer',
-    'Submitted': 'Awaiting Approval',
-    'ChangesRequested': 'Changes Requested',
-    'AwaitingJobID': 'Awaiting Job ID',
-    'InProduction': 'In Production (Block)',
-    'Closed': 'Closed'
-  };
-  const STAGE_COLORS = {
-    'Assigned': 'status-Pending',
-    'Submitted': 'status-In-Progress',
-    'ChangesRequested': 'status-Pending',
-    'AwaitingJobID': 'status-In-Progress',
-    'InProduction': 'status-In-Progress',
-    'Closed': 'status-Done'
+    'Assigned': 'Assigned to Designer', 'Submitted': 'Awaiting Approval', 'ChangesRequested': 'Changes Requested',
+    'AwaitingJobID': 'Awaiting Job ID', 'InProduction': 'In Production', 'Closed': 'Closed'
   };
 
-  function designSlaText(t) {
-    if (t.Stage === 'AwaitingJobID' && t.ApprovedAt) {
-      const hrs = businessHoursSince(t.ApprovedAt);
-      return hrs >= 24
-        ? `<span class="due overdue">Job ID overdue — ${Math.floor(hrs)}h since approval (limit 24h)</span>`
-        : `<span class="due">Job ID due in ~${Math.max(0, Math.ceil(24 - hrs))}h</span>`;
-    }
-    if (t.Stage === 'InProduction' && t.JobIDCreatedAt) {
-      const hrs = businessHoursSince(t.JobIDCreatedAt);
-      return hrs >= 48
-        ? `<span class="due overdue">Block overdue — ${Math.floor(hrs)}h since Job ID (limit 48h)</span>`
-        : `<span class="due">Block due in ~${Math.max(0, Math.ceil(48 - hrs))}h</span>`;
-    }
-    return '';
+  function stepperHTML(t) {
+    const cur = stageNodeIndex(t.Stage);
+    const isRevision = t.Stage === 'ChangesRequested';
+    return `<div class="stepper">` + STEPS.map((label, i) => {
+      let cls = '';
+      if (t.Stage === 'Closed') cls = 'done';
+      else if (i < cur) cls = 'done';
+      else if (i === cur) cls = isRevision ? 'revision' : 'current';
+      const mark = cls === 'done' ? '✓' : (cls === 'revision' ? '!' : (i+1));
+      return `<div class="step ${cls}"><div class="bar"></div><div class="dot">${mark}</div><div class="lbl">${label}</div></div>`;
+    }).join('') + `</div>`;
   }
 
-  // Approximate client-side business-hours-elapsed (skips Sunday), just for display —
-  // the authoritative check/alert happens server-side in checkDesignSLAs().
   function businessHoursSince(dateStr) {
-    const start = new Date(dateStr);
-    const now = new Date();
-    let total = 0;
-    let cursor = new Date(start);
+    const start = new Date(dateStr), now = new Date();
+    let total = 0, cursor = new Date(start);
     while (cursor < now) {
       const dayEnd = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1);
       const segEnd = dayEnd < now ? dayEnd : now;
@@ -636,29 +616,39 @@
     }
     return total;
   }
+  function designSlaText(t) {
+    if (t.Stage === 'AwaitingJobID' && t.ApprovedAt) {
+      const hrs = businessHoursSince(t.ApprovedAt);
+      return hrs >= 24 ? `<span class="slip-sla overdue">Job ID overdue — ${Math.floor(hrs)}h since approval</span>`
+                        : `<span class="slip-sla">Job ID due in ~${Math.max(0, Math.ceil(24 - hrs))}h</span>`;
+    }
+    if (t.Stage === 'InProduction' && t.JobIDCreatedAt) {
+      const hrs = businessHoursSince(t.JobIDCreatedAt);
+      return hrs >= 48 ? `<span class="slip-sla overdue">Block overdue — ${Math.floor(hrs)}h since Job ID</span>`
+                        : `<span class="slip-sla">Block due in ~${Math.max(0, Math.ceil(48 - hrs))}h</span>`;
+    }
+    return '';
+  }
 
   function renderDesignView(list) {
     document.getElementById('designView').style.display = 'block';
     const container = document.getElementById('designView');
-    if (!list.length) {
-      container.innerHTML = '<div class="empty">Koi Design Job nahi hai in filters ke sath.</div>';
-      return;
-    }
+    if (!list.length) { container.innerHTML = '<div class="empty">Koi Design Job nahi hai in filters ke sath.</div>'; return; }
     container.innerHTML = `<div class="cards">` + list.map(t => `
-      <div class="card" onclick="openDetail('${t.ID}')">
+      <div class="slip" onclick="openDetail('${t.ID}')">
         <div class="top-row">
           <div class="title">${escapeHtml(t.Title)}</div>
-          <span class="status-pill ${STAGE_COLORS[t.Stage] || 'status-Pending'}">${STAGE_LABELS[t.Stage] || t.Stage}</span>
+          <span class="pill ${t.Stage === 'Closed' ? 'Done' : (t.Stage==='ChangesRequested' ? 'Pending' : 'In-Progress')}">${STAGE_LABELS[t.Stage] || t.Stage}</span>
         </div>
-        <div class="meta">
-          ${t.Project ? `<span class="badge project">${escapeHtml(t.Project)}</span>` : ''}
-          <span class="assignee">Designer: ${escapeHtml(t.AssignedTo)}</span>
-          <span class="assignee">Assigner: ${escapeHtml(t.AssignedBy)}</span>
-          ${t.JobID ? `<span class="badge priority-Low">Job ID: ${escapeHtml(t.JobID)}</span>` : ''}
+        ${stepperHTML(t)}
+        <div class="slip-meta">
+          ${t.Project ? `<span class="chip project">${escapeHtml(t.Project)}</span>` : ''}
+          <span class="chip assignee">Designer: ${escapeHtml(t.AssignedTo)}</span>
+          <span class="chip assignee">Assigner: ${escapeHtml(t.AssignedBy)}</span>
+          ${t.JobID ? `<span class="chip assignee mono">Job ID: ${escapeHtml(t.JobID)}</span>` : ''}
         </div>
-        <div style="margin-top:8px;">${designSlaText(t)}</div>
-      </div>
-    `).join('') + `</div>`;
+        ${designSlaText(t)}
+      </div>`).join('') + `</div>`;
   }
 
   function setView(v) {
@@ -667,11 +657,6 @@
     document.getElementById('viewListBtn').classList.toggle('active', v === 'list');
     document.getElementById('viewDesignBtn').classList.toggle('active', v === 'design');
     render();
-  }
-
-  function escapeHtml(str) {
-    if (!str) return '';
-    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 
   // ============ NEW TASK ============
@@ -684,7 +669,6 @@
     document.getElementById('ntPriority').value = 'Normal';
     document.getElementById('ntDueDate').value = '';
     document.getElementById('ntAttachment').value = '';
-    document.getElementById('ntAttachStatus').textContent = '';
     if (myName()) document.getElementById('ntAssignBy').value = myName();
     document.getElementById('newTaskOverlay').classList.add('show');
   }
@@ -694,115 +678,93 @@
     const assignedTo = document.getElementById('ntAssignTo').value;
     const assignedBy = document.getElementById('ntAssignBy').value;
     const dueDate = document.getElementById('ntDueDate').value;
-    if (!title || !assignedTo || !assignedBy || !dueDate) {
-      alert('Title, Assigned By, Assign To, aur Due Date zaroori hain.');
-      return;
-    }
-    const btn = document.getElementById('ntSubmitBtn');
-    btn.disabled = true;
-    btn.textContent = 'Creating...';
-    try {
-      const attachInput = document.getElementById('ntAttachment');
-      const attachStatus = document.getElementById('ntAttachStatus');
-      const attachmentUrl = await uploadAttachment(attachInput, attachStatus);
+    if (!title || !assignedTo || !assignedBy || !dueDate) { showToast('Title, Assigned By, Assign To, Due Date zaroori hain', true); return; }
 
-      const payload = {
-        action: 'createTask',
-        taskType: document.getElementById('ntType').value,
-        title,
-        description: document.getElementById('ntDesc').value.trim(),
-        project: document.getElementById('ntProject').value.trim(),
-        priority: document.getElementById('ntPriority').value,
-        dueDate,
-        assignedTo,
-        assignedBy,
-        attachmentUrl: attachmentUrl || ''
-      };
-      await apiPost(payload);
-      closeModal('newTaskOverlay');
-      await loadAll();
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Create Task';
-    }
+    const taskType = document.getElementById('ntType').value;
+    const tempId = 'temp-' + Date.now();
+    const now = new Date().toISOString();
+    const optimisticTask = {
+      ID: tempId, Title: title, Description: document.getElementById('ntDesc').value.trim(),
+      Project: document.getElementById('ntProject').value.trim(), AssignedBy: assignedBy, AssignedTo: assignedTo,
+      Priority: document.getElementById('ntPriority').value, Status: 'Pending', DueDate: dueDate,
+      CreatedDate: now, LastUpdated: now, TaskType: taskType, Stage: taskType === 'DesignJob' ? 'Assigned' : '',
+      AttachmentURL: document.getElementById('ntAttachment').value.trim(), JobID: '', ApprovedAt: '', JobIDCreatedAt: '', ChallanReceivedAt: ''
+    };
+    addLocalTask(optimisticTask);
+    closeModal('newTaskOverlay');
+    render();
+    showToast('Task created');
+
+    const payload = { action: 'createTask', taskType, title, description: optimisticTask.Description, project: optimisticTask.Project,
+      priority: optimisticTask.Priority, dueDate, assignedTo, assignedBy, attachmentUrl: optimisticTask.AttachmentURL };
+    const res = await apiPost(payload);
+    if (res.success) { patchLocalTask(tempId, { ID: res.id }); render(); }
+    else { removeLocalTask(tempId); render(); showToast('Task creation failed: ' + (res.error || ''), true); }
   }
 
   // ============ TASK DETAIL ============
-  async function openDetail(id) {
+  function openDetail(id) {
     activeTaskId = id;
     const t = tasks.find(x => x.ID === id);
     if (!t) return;
     document.getElementById('dEditForm').style.display = 'none';
     document.getElementById('dViewMode').style.display = 'block';
+    renderDetailView(t);
+    document.getElementById('detailOverlay').classList.add('show');
+    if (!commentsCache[id]) loadComments(id); else renderCommentsList(id);
+  }
+
+  function renderDetailView(t) {
     document.getElementById('dTitle').textContent = t.Title;
     document.getElementById('dProject').textContent = t.Project || 'No Project';
     document.getElementById('dPriority').textContent = t.Priority;
-    document.getElementById('dPriority').className = 'badge priority-' + t.Priority;
     document.getElementById('dAssignee').textContent = t.AssignedTo + ' (from ' + t.AssignedBy + ')';
     const overdue = isOverdue(t);
-    document.getElementById('dDue').textContent = (overdue ? 'Overdue — ' : 'Due ') + fmtDate(t.DueDate);
-    document.getElementById('dDue').className = 'due ' + (overdue ? 'overdue' : '');
+    document.getElementById('dDue').textContent = (overdue ? 'OVERDUE · ' : 'DUE ') + fmtDate(t.DueDate);
+    document.getElementById('dDue').className = 'due-line ' + (overdue ? 'overdue' : '');
     document.getElementById('dDesc').textContent = t.Description || 'No description added.';
-
     const area = document.getElementById('dActionArea');
     if (t.TaskType === 'DesignJob') {
-      area.innerHTML = designActionAreaHTML(t);
+      area.innerHTML = stepperHTML(t) + designActionAreaHTML(t);
     } else {
       const statuses = ['Pending', 'In Progress', 'Done'];
-      area.innerHTML = `<div class="status-buttons">` + statuses.map(s => `
-        <button class="${s === t.Status ? 'current' : 'secondary'}" onclick="changeStatus('${t.ID}','${s}')">${s}</button>
+      area.innerHTML = `<div style="display:flex; gap:8px; margin-top:14px;">` + statuses.map(s => `
+        <button class="${s === t.Status ? '' : 'secondary'}" style="flex:1; font-size:13px;" onclick="changeStatus('${t.ID}','${s}')">${s}</button>
       `).join('') + `</div>`;
     }
-
-    document.getElementById('detailOverlay').classList.add('show');
-    loadComments(id);
   }
 
-  // Builds the stage-aware action panel for a Design Job: shows only the controls
-  // relevant to the current stage and to whether the logged-in person is the
-  // designer (AssignedTo) or the assigner (AssignedBy).
+  function refreshDetailIfOpen(id) {
+    if (activeTaskId !== id) return;
+    const t = tasks.find(x => x.ID === id);
+    if (t) renderDetailView(t);
+  }
+
   function designActionAreaHTML(t) {
     const me = myName();
     const isDesigner = me === t.AssignedTo;
     const isAssigner = me === t.AssignedBy;
-    const stageLabel = STAGE_LABELS[t.Stage] || t.Stage;
-    const slaLine = designSlaText(t);
-
-    let html = `<div style="margin-bottom:14px;">
-      <span class="status-pill ${STAGE_COLORS[t.Stage] || 'status-Pending'}">${stageLabel}</span>
-      ${slaLine ? '<div style="margin-top:8px;">' + slaLine + '</div>' : ''}
-      ${t.AttachmentURL ? `<div style="margin-top:10px;"><a href="${t.AttachmentURL}" target="_blank">📎 View latest design file</a></div>` : ''}
-      ${t.JobID ? `<div style="margin-top:6px; font-size:13px;"><b>Job ID:</b> ${escapeHtml(t.JobID)}</div>` : ''}
+    let html = `<div style="margin:14px 0;">
+      ${designSlaText(t)}
+      ${t.AttachmentURL ? `<div style="margin-top:8px;"><a href="${t.AttachmentURL}" target="_blank">📎 View latest design file / link</a></div>` : ''}
+      ${t.JobID ? `<div style="margin-top:6px; font-size:13px;" class="mono"><b>Job ID:</b> ${escapeHtml(t.JobID)}</div>` : ''}
     </div>`;
 
     if ((t.Stage === 'Assigned' || t.Stage === 'ChangesRequested') && isDesigner) {
       html += `
-        <div class="field">
-          <label>Upload design file</label>
-          <input type="file" id="dsFile" accept="image/*,.pdf">
-        </div>
-        <div class="field">
-          <label>Note (optional)</label>
-          <input type="text" id="dsNote" placeholder="e.g. v2 with logo size fixed">
-        </div>
-        <div id="dsStatus" style="font-size:12px; color:var(--muted); margin-bottom:8px;"></div>
+        <div class="field"><label>Design file link</label><input type="text" id="dsFile" placeholder="Paste Drive/WhatsApp/image link"></div>
+        <div class="field"><label>Note (optional)</label><input type="text" id="dsNote" placeholder="e.g. v2 with logo size fixed"></div>
         <button onclick="doSubmitDesign('${t.ID}')">Submit for Approval</button>`;
     } else if (t.Stage === 'Submitted' && isAssigner) {
       html += `
-        <div class="field">
-          <label>Comment (required if requesting changes)</label>
-          <input type="text" id="dsApprovalComment" placeholder="Feedback / changes needed">
-        </div>
+        <div class="field"><label>Comment (required if requesting changes)</label><input type="text" id="dsApprovalComment" placeholder="Feedback / changes needed"></div>
         <div style="display:flex; gap:8px;">
           <button onclick="doApprove('${t.ID}')">Approve</button>
           <button class="secondary" onclick="doRequestChanges('${t.ID}')">Request Changes</button>
         </div>`;
     } else if (t.Stage === 'AwaitingJobID' && isDesigner) {
       html += `
-        <div class="field">
-          <label>Job ID (from Block Creation Company)</label>
-          <input type="text" id="dsJobId" placeholder="Enter Job ID once received">
-        </div>
+        <div class="field"><label>Job ID (from Block Creation Company)</label><input type="text" id="dsJobId" placeholder="Enter Job ID once received"></div>
         <button onclick="doConfirmJobId('${t.ID}')">Confirm Job ID</button>`;
     } else if (t.Stage === 'InProduction' && isDesigner) {
       html += `<button onclick="doMarkChallan('${t.ID}')">Mark Challan Received (Close Job)</button>`;
@@ -815,54 +777,49 @@
   }
 
   async function doSubmitDesign(id) {
-    const fileInput = document.getElementById('dsFile');
-    const statusEl = document.getElementById('dsStatus');
+    const link = document.getElementById('dsFile').value.trim();
     const note = document.getElementById('dsNote').value.trim();
-    const attachmentUrl = await uploadAttachment(fileInput, statusEl);
-    if (fileInput.files[0] && !attachmentUrl) { alert('File upload fail ho gaya, dobara try karein.'); return; }
-    await apiPost({ action: 'submitDesign', id, author: myName(), attachmentUrl: attachmentUrl || '', comment: note });
-    await loadAll();
-    openDetail(id);
+    patchLocalTask(id, { Stage: 'Submitted', AttachmentURL: link || tasks.find(t=>t.ID===id).AttachmentURL });
+    optimisticComment(id, note || 'Design submitted for approval.', link);
+    refreshDetailIfOpen(id); render(); showToast('Submitted for approval');
+    bg(apiPost({ action: 'submitDesign', id, author: myName(), attachmentUrl: link, comment: note }), 'Submit failed');
   }
-
   async function doApprove(id) {
     const comment = document.getElementById('dsApprovalComment').value.trim();
-    await apiPost({ action: 'approveDesign', id, author: myName(), comment });
-    await loadAll();
-    openDetail(id);
+    patchLocalTask(id, { Stage: 'AwaitingJobID', ApprovedAt: new Date().toISOString() });
+    optimisticComment(id, comment || 'Approved. Sent to Block Creation Company.');
+    refreshDetailIfOpen(id); render(); showToast('Approved — Block Company notified');
+    bg(apiPost({ action: 'approveDesign', id, author: myName(), comment }), 'Approve failed');
   }
-
   async function doRequestChanges(id) {
     const comment = document.getElementById('dsApprovalComment').value.trim();
-    if (!comment) { alert('Changes request ke liye comment likhna zaroori hai.'); return; }
-    await apiPost({ action: 'requestChanges', id, author: myName(), comment });
-    await loadAll();
-    openDetail(id);
+    if (!comment) { showToast('Changes request ke liye comment zaroori hai', true); return; }
+    patchLocalTask(id, { Stage: 'ChangesRequested' });
+    optimisticComment(id, comment);
+    refreshDetailIfOpen(id); render(); showToast('Changes requested');
+    bg(apiPost({ action: 'requestChanges', id, author: myName(), comment }), 'Request changes failed');
   }
-
   async function doConfirmJobId(id) {
     const jobId = document.getElementById('dsJobId').value.trim();
-    if (!jobId) { alert('Job ID likhein.'); return; }
-    await apiPost({ action: 'confirmJobId', id, author: myName(), jobId });
-    await loadAll();
-    openDetail(id);
+    if (!jobId) { showToast('Job ID likhein', true); return; }
+    patchLocalTask(id, { Stage: 'InProduction', JobID: jobId, JobIDCreatedAt: new Date().toISOString() });
+    optimisticComment(id, 'Job ID confirmed: ' + jobId);
+    refreshDetailIfOpen(id); render(); showToast('Job ID confirmed');
+    bg(apiPost({ action: 'confirmJobId', id, author: myName(), jobId }), 'Confirm Job ID failed');
   }
-
   async function doMarkChallan(id) {
-    await apiPost({ action: 'markChallanReceived', id, author: myName() });
-    await loadAll();
-    openDetail(id);
+    patchLocalTask(id, { Stage: 'Closed', Status: 'Done', ChallanReceivedAt: new Date().toISOString() });
+    optimisticComment(id, 'Challan received — job closed.');
+    refreshDetailIfOpen(id); render(); showToast('Job closed');
+    bg(apiPost({ action: 'markChallanReceived', id, author: myName() }), 'Close job failed');
+  }
+  async function changeStatus(id, status) {
+    patchLocalTask(id, { Status: status });
+    refreshDetailIfOpen(id); render(); showToast('Status: ' + status);
+    bg(apiPost({ action: 'updateTask', id, status }), 'Status update failed');
   }
 
-  function toDateInputValue(d) {
-    const dt = new Date(d);
-    if (isNaN(dt)) return '';
-    const yyyy = dt.getFullYear();
-    const mm = String(dt.getMonth() + 1).padStart(2, '0');
-    const dd = String(dt.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  }
-
+  // ============ EDIT / DELETE ============
   function toggleEditMode() {
     const t = tasks.find(x => x.ID === activeTaskId);
     if (!t) return;
@@ -871,95 +828,83 @@
     document.getElementById('edProject').value = t.Project || '';
     document.getElementById('edPriority').value = t.Priority;
     document.getElementById('edDueDate').value = toDateInputValue(t.DueDate);
-    const assignSel = document.getElementById('edAssignTo');
-    assignSel.innerHTML = users.map(u =>
-      `<option value="${u.Name}" ${u.Name === t.AssignedTo ? 'selected' : ''}>${u.Name}</option>`
-    ).join('');
+    const sel = document.getElementById('edAssignTo');
+    sel.innerHTML = users.map(u => `<option value="${u.Name}" ${u.Name === t.AssignedTo ? 'selected' : ''}>${u.Name}</option>`).join('');
     document.getElementById('dViewMode').style.display = 'none';
     document.getElementById('dEditForm').style.display = 'block';
   }
-
   function cancelEdit() {
     document.getElementById('dEditForm').style.display = 'none';
     document.getElementById('dViewMode').style.display = 'block';
   }
-
   async function saveEdit() {
     const title = document.getElementById('edTitle').value.trim();
     const dueDate = document.getElementById('edDueDate').value;
-    if (!title || !dueDate) { alert('Title aur Due Date zaroori hain.'); return; }
-    await apiPost({
-      action: 'updateTask',
-      id: activeTaskId,
-      title,
-      description: document.getElementById('edDesc').value.trim(),
-      project: document.getElementById('edProject').value.trim(),
-      priority: document.getElementById('edPriority').value,
-      assignedTo: document.getElementById('edAssignTo').value,
-      dueDate
-    });
-    await loadAll();
-    openDetail(activeTaskId);
+    if (!title || !dueDate) { showToast('Title aur Due Date zaroori hain', true); return; }
+    const patch = { Title: title, Description: document.getElementById('edDesc').value.trim(),
+      Project: document.getElementById('edProject').value.trim(), Priority: document.getElementById('edPriority').value,
+      AssignedTo: document.getElementById('edAssignTo').value, DueDate: dueDate };
+    patchLocalTask(activeTaskId, patch);
+    cancelEdit(); renderDetailView(tasks.find(t=>t.ID===activeTaskId)); render(); showToast('Saved');
+    bg(apiPost({ action: 'updateTask', id: activeTaskId, title: patch.Title, description: patch.Description,
+      project: patch.Project, priority: patch.Priority, assignedTo: patch.AssignedTo, dueDate }), 'Save failed');
   }
-
   async function deleteCurrentTask() {
     if (!confirm('Ye task delete karna hai? Ye undo nahi ho sakta.')) return;
-    await apiPost({ action: 'deleteTask', id: activeTaskId });
-    closeModal('detailOverlay');
-    await loadAll();
+    const id = activeTaskId;
+    removeLocalTask(id);
+    closeModal('detailOverlay'); render(); showToast('Task deleted');
+    bg(apiPost({ action: 'deleteTask', id }), 'Delete failed');
   }
 
-  async function changeStatus(id, status) {
-    await apiPost({ action: 'updateTask', id, status });
-    await loadAll();
-    openDetail(id);
+  // ============ COMMENTS ============
+  function optimisticComment(taskId, comment, attachmentUrl) {
+    if (!commentsCache[taskId]) commentsCache[taskId] = [];
+    commentsCache[taskId].push({ Author: myName(), Comment: comment, Timestamp: new Date().toISOString(), AttachmentURL: attachmentUrl || '' });
+    renderCommentsList(taskId);
   }
-
-  async function loadComments(taskId) {
-    const res = await apiGet('getComments', { taskId });
-    const comments = res.comments || [];
+  function renderCommentsList(taskId) {
+    if (activeTaskId !== taskId) return;
+    const comments = commentsCache[taskId] || [];
     const box = document.getElementById('dComments');
     box.innerHTML = comments.length ? comments.map(c => `
       <div class="comment">
-        <span class="cauthor">${escapeHtml(c.Author)}</span>
-        <span class="ctime">${fmtDate(c.Timestamp)}</span>
+        <span class="cauthor">${escapeHtml(c.Author)}</span><span class="ctime">${fmtDate(c.Timestamp)}</span>
         <div>${escapeHtml(c.Comment)}</div>
-        ${c.AttachmentURL ? `<div style="margin-top:4px;"><a href="${c.AttachmentURL}" target="_blank">📎 Attachment</a></div>` : ''}
-      </div>
-    `).join('') : '<div class="empty" style="padding:10px 0;">No comments yet</div>';
+        ${c.AttachmentURL ? `<div style="margin-top:4px;"><a href="${c.AttachmentURL}" target="_blank">📎 Link</a></div>` : ''}
+      </div>`).join('') : '<div class="empty" style="padding:10px 0;">No comments yet</div>';
   }
-
+  async function loadComments(taskId) {
+    const res = await apiGet('getComments', { taskId });
+    commentsCache[taskId] = res.comments || [];
+    renderCommentsList(taskId);
+  }
   async function submitComment() {
     const input = document.getElementById('dNewComment');
-    const fileInput = document.getElementById('dCommentFile');
+    const linkInput = document.getElementById('dCommentLink');
     const text = input.value.trim();
     if (!text) return;
     if (!myName()) { document.getElementById('nameGate').style.display = 'flex'; return; }
-    const attachmentUrl = await uploadAttachment(fileInput, null);
-    await apiPost({ action: 'addComment', taskId: activeTaskId, author: myName(), comment: text, attachmentUrl: attachmentUrl || '' });
-    input.value = '';
-    fileInput.value = '';
-    loadComments(activeTaskId);
+    const link = linkInput.value.trim();
+    optimisticComment(activeTaskId, text, link);
+    input.value = ''; linkInput.value = '';
+    bg(apiPost({ action: 'addComment', taskId: activeTaskId, author: myName(), comment: text, attachmentUrl: link }), 'Comment failed to save');
   }
 
   // ============ MODAL HELPERS ============
-  function closeModal(id) {
-    document.getElementById(id).classList.remove('show');
-  }
+  function closeModal(id) { document.getElementById(id).classList.remove('show'); }
   document.querySelectorAll('.overlay').forEach(o => {
     o.addEventListener('click', e => { if (e.target === o) o.classList.remove('show'); });
   });
 
   // ============ FILTER LISTENERS ============
-  ['filterAssignee','filterProject','filterStatus'].forEach(id => {
-    document.getElementById(id).addEventListener('change', render);
-  });
+  ['filterAssignee','filterProject','filterStatus'].forEach(id => document.getElementById(id).addEventListener('change', render));
   document.getElementById('searchBox').addEventListener('input', render);
 
   // ============ INIT ============
   initIdentity();
   loadAll();
-  setInterval(loadAll, 60000); // refresh every 60s so team sees each other's updates
+  setInterval(loadAll, 45000); // background sync only — never blocks user actions
 </script>
 
 </body>
