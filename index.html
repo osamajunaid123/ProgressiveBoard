@@ -286,15 +286,59 @@
     <button class="close" onclick="closeModal('detailOverlay')">&times;</button>
     <div class="detail-head">
       <h2 id="dTitle"></h2>
+      <div style="display:flex; gap:6px; flex-shrink:0;">
+        <button class="secondary" onclick="toggleEditMode()" style="padding:6px 10px; font-size:12px;">Edit</button>
+        <button class="secondary" onclick="deleteCurrentTask()" style="padding:6px 10px; font-size:12px; color:var(--bad); border-color:var(--bad-soft);">Delete</button>
+      </div>
     </div>
-    <div class="detail-meta">
-      <span class="badge project" id="dProject"></span>
-      <span class="badge" id="dPriority"></span>
-      <span class="assignee" id="dAssignee"></span>
-      <span class="due" id="dDue"></span>
+    <div id="dViewMode">
+      <div class="detail-meta">
+        <span class="badge project" id="dProject"></span>
+        <span class="badge" id="dPriority"></span>
+        <span class="assignee" id="dAssignee"></span>
+        <span class="due" id="dDue"></span>
+      </div>
+      <div class="detail-desc" id="dDesc"></div>
+      <div id="dActionArea"></div>
     </div>
-    <div class="detail-desc" id="dDesc"></div>
-    <div id="dActionArea"></div>
+    <div id="dEditForm" style="display:none;">
+      <div class="field">
+        <label>Title</label>
+        <input type="text" id="edTitle">
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="edDesc"></textarea>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Project / Category</label>
+          <input type="text" id="edProject">
+        </div>
+        <div class="field">
+          <label>Priority</label>
+          <select id="edPriority">
+            <option>Normal</option>
+            <option>High</option>
+            <option>Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Assign To</label>
+          <select id="edAssignTo"></select>
+        </div>
+        <div class="field">
+          <label>Due Date</label>
+          <input type="date" id="edDueDate">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="secondary" onclick="cancelEdit()">Cancel</button>
+        <button onclick="saveEdit()">Save Changes</button>
+      </div>
+    </div>
     <div class="comments">
       <h4>Comments</h4>
       <div id="dComments"></div>
@@ -688,6 +732,8 @@
     activeTaskId = id;
     const t = tasks.find(x => x.ID === id);
     if (!t) return;
+    document.getElementById('dEditForm').style.display = 'none';
+    document.getElementById('dViewMode').style.display = 'block';
     document.getElementById('dTitle').textContent = t.Title;
     document.getElementById('dProject').textContent = t.Project || 'No Project';
     document.getElementById('dPriority').textContent = t.Priority;
@@ -806,6 +852,61 @@
     await apiPost({ action: 'markChallanReceived', id, author: myName() });
     await loadAll();
     openDetail(id);
+  }
+
+  function toDateInputValue(d) {
+    const dt = new Date(d);
+    if (isNaN(dt)) return '';
+    const yyyy = dt.getFullYear();
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  function toggleEditMode() {
+    const t = tasks.find(x => x.ID === activeTaskId);
+    if (!t) return;
+    document.getElementById('edTitle').value = t.Title;
+    document.getElementById('edDesc').value = t.Description || '';
+    document.getElementById('edProject').value = t.Project || '';
+    document.getElementById('edPriority').value = t.Priority;
+    document.getElementById('edDueDate').value = toDateInputValue(t.DueDate);
+    const assignSel = document.getElementById('edAssignTo');
+    assignSel.innerHTML = users.map(u =>
+      `<option value="${u.Name}" ${u.Name === t.AssignedTo ? 'selected' : ''}>${u.Name}</option>`
+    ).join('');
+    document.getElementById('dViewMode').style.display = 'none';
+    document.getElementById('dEditForm').style.display = 'block';
+  }
+
+  function cancelEdit() {
+    document.getElementById('dEditForm').style.display = 'none';
+    document.getElementById('dViewMode').style.display = 'block';
+  }
+
+  async function saveEdit() {
+    const title = document.getElementById('edTitle').value.trim();
+    const dueDate = document.getElementById('edDueDate').value;
+    if (!title || !dueDate) { alert('Title aur Due Date zaroori hain.'); return; }
+    await apiPost({
+      action: 'updateTask',
+      id: activeTaskId,
+      title,
+      description: document.getElementById('edDesc').value.trim(),
+      project: document.getElementById('edProject').value.trim(),
+      priority: document.getElementById('edPriority').value,
+      assignedTo: document.getElementById('edAssignTo').value,
+      dueDate
+    });
+    await loadAll();
+    openDetail(activeTaskId);
+  }
+
+  async function deleteCurrentTask() {
+    if (!confirm('Ye task delete karna hai? Ye undo nahi ho sakta.')) return;
+    await apiPost({ action: 'deleteTask', id: activeTaskId });
+    closeModal('detailOverlay');
+    await loadAll();
   }
 
   async function changeStatus(id, status) {
