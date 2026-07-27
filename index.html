@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progressive Board</title>
+<style>
+  :root{
+    --ink:#1c2430;
+    --paper:#f6f4ef;
+    --panel:#ffffff;
+    --line:#e2ddd2;
+    --muted:#767066;
+    --accent:#b8562f;
+    --accent-soft:#f3e2d6;
+    --good:#3f7f5a;
+    --good-soft:#e2efe7;
+    --warn:#b8862f;
+    --warn-soft:#f4ead2;
+    --bad:#b3402f;
+    --bad-soft:#f6ded9;
+    --radius:10px;
+    font-size:15px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height:1.4;
+  }
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 28px; background:var(--panel); border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:20;
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{
+    width:30px; height:30px; border-radius:8px; background:var(--accent);
+    display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:14px;
+  }
+  .brand h1{font-size:19px; margin:0; letter-spacing:-0.01em;}
+  .brand .tag{font-size:12px; color:var(--muted); margin-top:1px;}
+  .who{display:flex; align-items:center; gap:10px;}
+  select, input, textarea, button{
+    font-family:inherit; font-size:14px; border-radius:8px; border:1px solid var(--line);
+    background:#fff; color:var(--ink); padding:8px 12px;
+  }
+  button{cursor:pointer; border:1px solid var(--ink); background:var(--ink); color:#fff; font-weight:600;}
+  button.secondary{background:#fff; color:var(--ink); border:1px solid var(--line); font-weight:500;}
+  button:disabled{opacity:0.5; cursor:not-allowed;}
+
+  main{max-width:1180px; margin:0 auto; padding:24px 28px 60px;}
+
+  .stats{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:22px;}
+  .stat{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px;}
+  .stat .num{font-size:26px; font-weight:700;}
+  .stat .lbl{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;}
+  .stat.overdue .num{color:var(--bad);}
+
+  .toolbar{
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .filters{display:flex; gap:8px; flex-wrap:wrap;}
+  .view-toggle{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .view-toggle button{border:none; border-radius:0; background:#fff; color:var(--ink); font-weight:500;}
+  .view-toggle button.active{background:var(--ink); color:#fff;}
+
+  .board{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  .col{background:transparent;}
+  .col h3{
+    font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);
+    display:flex; align-items:center; justify-content:space-between; margin:0 0 10px 2px;
+  }
+  .col h3 .count{background:var(--line); color:var(--ink); border-radius:20px; padding:1px 8px; font-size:12px;}
+  .cards{display:flex; flex-direction:column; gap:10px; min-height:40px;}
+
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px 14px; cursor:pointer; transition:box-shadow .15s, transform .15s;
+  }
+  .card:hover{box-shadow:0 4px 14px rgba(28,36,48,0.08); transform:translateY(-1px);}
+  .card .top-row{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+  .card .title{font-weight:600; font-size:14.5px;}
+  .card .meta{margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;}
+  .badge{font-size:11px; padding:2px 8px; border-radius:20px; font-weight:600;}
+  .badge.project{background:var(--accent-soft); color:var(--accent);}
+  .badge.priority-High{background:var(--bad-soft); color:var(--bad);}
+  .badge.priority-Normal{background:#eee; color:var(--muted);}
+  .badge.priority-Low{background:var(--good-soft); color:var(--good);}
+  .due{font-size:12px; color:var(--muted);}
+  .due.overdue{color:var(--bad); font-weight:700;}
+  .assignee{font-size:12px; color:var(--ink); background:#f0ede6; padding:2px 8px; border-radius:20px;}
+
+  .list-table{width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  .list-table th, .list-table td{padding:10px 12px; text-align:left; border-bottom:1px solid var(--line); font-size:13.5px;}
+  .list-table th{background:#faf8f3; font-size:11.5px; text-transform:uppercase; color:var(--muted); letter-spacing:.03em;}
+  .list-table tr:last-child td{border-bottom:none;}
+  .list-table tr:hover{background:#faf8f3; cursor:pointer;}
+  .status-pill{font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px;}
+  .status-Pending{background:var(--warn-soft); color:var(--warn);}
+  .status-In-Progress{background:#dfe6f3; color:#3a5a9c;}
+  .status-Done{background:var(--good-soft); color:var(--good);}
+
+  .empty{text-align:center; color:var(--muted); padding:40px 0; font-size:14px;}
+
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(20,20,18,0.45); display:none;
+    align-items:center; justify-content:center; z-index:50; padding:20px;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:#fff; border-radius:14px; width:100%; max-width:560px; max-height:88vh;
+    overflow-y:auto; padding:24px; position:relative;
+  }
+  .modal h2{margin:0 0 16px; font-size:18px;}
+  .modal .close{position:absolute; top:16px; right:18px; background:none; border:none; color:var(--muted); font-size:20px; padding:2px 6px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12.5px; font-weight:600; color:var(--muted); margin-bottom:5px;}
+  .field input, .field select, .field textarea{width:100%;}
+  .field textarea{resize:vertical; min-height:60px;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:18px;}
+
+  .detail-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px;}
+  .detail-meta{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 16px;}
+  .detail-desc{font-size:14px; color:#3a3a36; white-space:pre-wrap; margin-bottom:16px;}
+  .status-buttons{display:flex; gap:8px; margin-bottom:18px;}
+  .status-buttons button{flex:1; font-size:13px;}
+  .status-buttons button.current{outline:2px solid var(--ink); outline-offset:1px;}
+
+  .comments{border-top:1px solid var(--line); padding-top:14px;}
+  .comments h4{margin:0 0 10px; font-size:13px; text-transform:uppercase; color:var(--muted); letter-spacing:.03em;}
+  .comment{background:#faf8f3; border-radius:8px; padding:8px 10px; margin-bottom:8px; font-size:13.5px;}
+  .comment .cauthor{font-weight:700; font-size:12.5px;}
+  .comment .ctime{font-size:11px; color:var(--muted); margin-left:6px;}
+  .add-comment{display:flex; gap:8px; margin-top:10px;}
+  .add-comment input{flex:1;}
+
+  .name-gate{
+    position:fixed; inset:0; background:var(--paper); display:flex; align-items:center; justify-content:center; z-index:100;
+  }
+  .name-gate .box{background:#fff; border:1px solid var(--line); border-radius:14px; padding:28px; width:100%; max-width:360px; text-align:center;}
+  .name-gate h2{margin-top:0;}
+
+  @media (max-width:800px){
+    .board{grid-template-columns:1fr;}
+    .stats{grid-template-columns:repeat(2,1fr);}
+    header{padding:14px 16px;}
+    main{padding:16px 16px 60px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="name-gate" id="nameGate">
+  <div class="box">
+    <h2>Progressive Board</h2>
+    <p style="color:var(--muted); font-size:14px; margin-bottom:16px;">Apna naam select karein aur password enter karein</p>
+    <select id="gateSelect" style="width:100%; margin-bottom:10px;"></select>
+    <input type="password" id="gatePassword" placeholder="Password" style="width:100%; margin-bottom:10px;" onkeydown="if(event.key==='Enter') setIdentity()">
+    <div id="gateError" style="color:var(--bad); font-size:13px; margin-bottom:10px; display:none;"></div>
+    <button style="width:100%;" onclick="setIdentity()">Login</button>
+  </div>
+</div>
+
+<header>
+  <div class="brand">
+    <div class="mark">P</div>
+    <div>
+      <h1>Progressive Board</h1>
+      <div class="tag">Progressive International — Team Task Tracker</div>
+    </div>
+  </div>
+  <div class="who">
+    <span id="whoAmI" style="font-size:13px; color:var(--muted);"></span>
+    <button class="secondary" onclick="logout()" style="padding:6px 10px; font-size:12px;">Logout</button>
+    <button onclick="openNewTaskModal()">+ New Task</button>
+  </div>
+</header>
+
+<main>
+  <div class="stats">
+    <div class="stat"><div class="num" id="statTotal">0</div><div class="lbl">Total</div></div>
+    <div class="stat"><div class="num" id="statPending">0</div><div class="lbl">Pending</div></div>
+    <div class="stat"><div class="num" id="statProgress">0</div><div class="lbl">In Progress</div></div>
+    <div class="stat"><div class="num" id="statDone">0</div><div class="lbl">Done</div></div>
+    <div class="stat overdue"><div class="num" id="statOverdue">0</div><div class="lbl">Overdue</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="filters">
+      <select id="filterAssignee"><option value="">Everyone</option></select>
+      <select id="filterProject"><option value="">All Projects</option></select>
+      <select id="filterStatus">
+        <option value="">All Status</option>
+        <option value="Pending">Pending</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Done">Done</option>
+      </select>
+      <input type="text" id="searchBox" placeholder="Search tasks...">
+    </div>
+    <div class="view-toggle">
+      <button id="viewBoardBtn" class="active" onclick="setView('board')">Board</button>
+      <button id="viewListBtn" onclick="setView('list')">List</button>
+      <button id="viewDesignBtn" onclick="setView('design')">Design Jobs</button>
+    </div>
+  </div>
+
+  <div id="boardView" class="board"></div>
+  <table id="listView" class="list-table" style="display:none;">
+    <thead>
+      <tr><th>Title</th><th>Project</th><th>Assigned To</th><th>Priority</th><th>Due</th><th>Status</th></tr>
+    </thead>
+    <tbody id="listBody"></tbody>
+  </table>
+  <div id="designView" style="display:none;"></div>
+</main>
+
+<!-- New Task Modal -->
+<div class="overlay" id="newTaskOverlay">
+  <div class="modal">
+    <button class="close" onclick="closeModal('newTaskOverlay')">&times;</button>
+    <h2>New Task</h2>
+    <div class="field">
+      <label>Task Type</label>
+      <select id="ntType">
+        <option value="General">General Task</option>
+        <option value="DesignJob">Design Job (artwork → approval → block production)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="ntTitle" placeholder="e.g. Design Ramzan campaign banner">
+    </div>
+    <div class="field">
+      <label>Description</label>
+      <textarea id="ntDesc" placeholder="Details, links, references..."></textarea>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Assigned By</label>
+        <select id="ntAssignBy"></select>
+      </div>
+      <div class="field">
+        <label>Assign To</label>
+        <select id="ntAssignTo"></select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Project / Category</label>
+        <input type="text" id="ntProject" placeholder="e.g. Marketing, ZFM, Sales">
+      </div>
+      <div class="field">
+        <label>Priority</label>
+        <select id="ntPriority">
+          <option>Normal</option>
+          <option>High</option>
+          <option>Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Due Date</label>
+      <input type="date" id="ntDueDate">
+    </div>
+    <div class="field">
+      <label>Attach file (image or PDF) — optional</label>
+      <input type="file" id="ntAttachment" accept="image/*,.pdf">
+      <div id="ntAttachStatus" style="font-size:12px; color:var(--muted); margin-top:4px;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="secondary" onclick="closeModal('newTaskOverlay')">Cancel</button>
+      <button id="ntSubmitBtn" onclick="submitNewTask()">Create Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task Detail Modal -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal">
+    <button class="close" onclick="closeModal('detailOverlay')">&times;</button>
+    <div class="detail-head">
+      <h2 id="dTitle"></h2>
+    </div>
+    <div class="detail-meta">
+      <span class="badge project" id="dProject"></span>
+      <span class="badge" id="dPriority"></span>
+      <span class="assignee" id="dAssignee"></span>
+      <span class="due" id="dDue"></span>
+    </div>
+    <div class="detail-desc" id="dDesc"></div>
+    <div id="dActionArea"></div>
+    <div class="comments">
+      <h4>Comments</h4>
+      <div id="dComments"></div>
+      <div class="add-comment">
+        <input type="text" id="dNewComment" placeholder="Add a comment...">
+        <input type="file" id="dCommentFile" accept="image/*,.pdf" style="max-width:140px;">
+        <button onclick="submitComment()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============ CONFIG ============
+  // Paste your Apps Script Web App URL here (Deploy > New deployment > Web app > Execute as: Me > Who has access: Anyone with the link)
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwkIoqHjCdEDo0d2q4IV7B81VKtX5tcEJB3QQFD3extPHfbMPedMPH38slKIO7FvekC/exec';
+
+  // ============ STATE ============
+  let tasks = [];
+  let users = [];
+  let currentView = 'board';
+  let activeTaskId = null;
+
+  // ============ IDENTITY / LOGIN ============
+  function initIdentity() {
+    const saved = localStorage.getItem('pb_identity');
+    if (saved) {
+      const user = JSON.parse(saved);
+      document.getElementById('nameGate').style.display = 'none';
+      document.getElementById('whoAmI').textContent = user.name + (user.designation ? ' · ' + user.designation : '');
+    } else {
+      document.getElementById('nameGate').style.display = 'flex';
+    }
+  }
+
+  async function setIdentity() {
+    const name = document.getElementById('gateSelect').value;
+    const password = document.getElementById('gatePassword').value;
+    const errBox = document.getElementById('gateError');
+    errBox.style.display = 'none';
+
+    if (!name || !password) {
+      errBox.textContent = 'Naam select karein aur password likhein.';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    const res = await apiPost({ action: 'login', name, password });
+    if (!res.success) {
+      errBox.textContent = res.error || 'Login fail ho gaya.';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    localStorage.setItem('pb_identity', JSON.stringify({ name: res.name, designation: res.designation }));
+    document.getElementById('gatePassword').value = '';
+    document.getElementById('nameGate').style.display = 'none';
+    document.getElementById('whoAmI').textContent = res.name + (res.designation ? ' · ' + res.designation : '');
+  }
+
+  function logout() {
+    localStorage.removeItem('pb_identity');
+    document.getElementById('nameGate').style.display = 'flex';
+    document.getElementById('whoAmI').textContent = '';
+  }
+
+  function myName() {
+    const saved = localStorage.getItem('pb_identity');
+    return saved ? JSON.parse(saved).name : '';
+  }
+
+  // ============ API HELPERS ============
+  async function apiGet(action, params) {
+    const q = new URLSearchParams({ action, ...(params || {}) });
+    const res = await fetch(API_URL + '?' + q.toString());
+    return res.json();
+  }
+  async function apiPost(payload) {
+    // text/plain avoids a CORS preflight against Apps Script
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Uploads a <input type=file> selection to Drive via the backend. Returns the
+  // file URL, or null if no file was selected. Shows a small status line while working.
+  async function uploadAttachment(inputEl, statusEl) {
+    const file = inputEl.files[0];
+    if (!file) return null;
+    if (statusEl) statusEl.textContent = 'Uploading ' + file.name + '...';
+    const data = await fileToBase64(file);
+    const res = await apiPost({ action: 'uploadFile', data, fileName: file.name, mimeType: file.type });
+    if (statusEl) statusEl.textContent = res.success ? ('Attached: ' + file.name) : (res.error || 'Upload failed');
+    return res.success ? res.url : null;
+  }
+
+  // ============ LOAD DATA ============
+  async function loadAll() {
+    const [taskRes, userRes] = await Promise.all([apiGet('getTasks'), apiGet('getUsers')]);
+    tasks = taskRes.tasks || [];
+    users = userRes.users || [];
+    populateUserDropdowns();
+    populateProjectFilter();
+    render();
+  }
+
+  function populateUserDropdowns() {
+    const gate = document.getElementById('gateSelect');
+    const filterA = document.getElementById('filterAssignee');
+    const ntAssign = document.getElementById('ntAssignTo');
+    const ntAssignBy = document.getElementById('ntAssignBy');
+    gate.innerHTML = '<option value="">Select your name...</option>';
+    filterA.innerHTML = '<option value="">Everyone</option>';
+    ntAssign.innerHTML = '';
+    ntAssignBy.innerHTML = '';
+    users.forEach(u => {
+      gate.innerHTML += `<option value="${u.Name}">${u.Name}</option>`;
+      filterA.innerHTML += `<option value="${u.Name}">${u.Name}</option>`;
+      ntAssign.innerHTML += `<option value="${u.Name}">${u.Name}</option>`;
+      ntAssignBy.innerHTML += `<option value="${u.Name}">${u.Name}</option>`;
+    });
+    if (myName()) ntAssignBy.value = myName();
+  }
+
+  function populateProjectFilter() {
+    const filterP = document.getElementById('filterProject');
+    const projects = [...new Set(tasks.map(t => t.Project).filter(Boolean))];
+    filterP.innerHTML = '<option value="">All Projects</option>' +
+      projects.map(p => `<option value="${p}">${p}</option>`).join('');
+  }
+
+  // ============ FILTERING ============
+  function getFilteredTasks() {
+    const assignee = document.getElementById('filterAssignee').value;
+    const project = document.getElementById('filterProject').value;
+    const status = document.getElementById('filterStatus').value;
+    const search = document.getElementById('searchBox').value.toLowerCase();
+    return tasks.filter(t => {
+      if (assignee && t.AssignedTo !== assignee) return false;
+      if (project && t.Project !== project) return false;
+      if (status && t.Status !== status) return false;
+      if (search && !(t.Title || '').toLowerCase().includes(search)) return false;
+      return true;
+    });
+  }
+
+  function isOverdue(t) {
+    if (t.Status === 'Done') return false;
+    const d = new Date(t.DueDate);
+    d.setHours(0,0,0,0);
+    const today = new Date(); today.setHours(0,0,0,0);
+    return d < today;
+  }
+
+  function fmtDate(d) {
+    const dt = new Date(d);
+    if (isNaN(dt)) return '';
+    return dt.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  // ============ RENDER ============
+  function render() {
+    const filtered = getFilteredTasks();
+    renderStats();
+    document.getElementById('boardView').style.display = 'none';
+    document.getElementById('listView').style.display = 'none';
+    document.getElementById('designView').style.display = 'none';
+
+    if (currentView === 'board') renderBoard(filtered.filter(t => t.TaskType !== 'DesignJob'));
+    else if (currentView === 'list') renderList(filtered.filter(t => t.TaskType !== 'DesignJob'));
+    else renderDesignView(filtered.filter(t => t.TaskType === 'DesignJob'));
+  }
+
+  function renderStats() {
+    const general = tasks.filter(t => t.TaskType !== 'DesignJob');
+    document.getElementById('statTotal').textContent = general.length;
+    document.getElementById('statPending').textContent = general.filter(t => t.Status === 'Pending').length;
+    document.getElementById('statProgress').textContent = general.filter(t => t.Status === 'In Progress').length;
+    document.getElementById('statDone').textContent = general.filter(t => t.Status === 'Done').length;
+    document.getElementById('statOverdue').textContent = general.filter(isOverdue).length;
+  }
+
+  function taskCardHTML(t) {
+    const overdue = isOverdue(t);
+    return `
+      <div class="card" onclick="openDetail('${t.ID}')">
+        <div class="top-row">
+          <div class="title">${escapeHtml(t.Title)}</div>
+        </div>
+        <div class="meta">
+          ${t.Project ? `<span class="badge project">${escapeHtml(t.Project)}</span>` : ''}
+          <span class="badge priority-${t.Priority}">${t.Priority}</span>
+          <span class="assignee">${escapeHtml(t.AssignedTo)}</span>
+        </div>
+        <div class="due ${overdue ? 'overdue' : ''}" style="margin-top:8px;">
+          ${overdue ? 'Overdue — ' : 'Due '} ${fmtDate(t.DueDate)}
+        </div>
+      </div>`;
+  }
+
+  function renderBoard(list) {
+    const cols = { 'Pending': [], 'In Progress': [], 'Done': [] };
+    list.forEach(t => { if (cols[t.Status]) cols[t.Status].push(t); });
+    const board = document.getElementById('boardView');
+    board.style.display = 'grid';
+    document.getElementById('listView').style.display = 'none';
+    board.innerHTML = Object.keys(cols).map(statusKey => `
+      <div class="col">
+        <h3>${statusKey} <span class="count">${cols[statusKey].length}</span></h3>
+        <div class="cards">
+          ${cols[statusKey].length ? cols[statusKey].map(taskCardHTML).join('') : '<div class="empty">No tasks</div>'}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderList(list) {
+    document.getElementById('boardView').style.display = 'none';
+    const table = document.getElementById('listView');
+    table.style.display = 'table';
+    const body = document.getElementById('listBody');
+    if (!list.length) {
+      body.innerHTML = `<tr><td colspan="6" class="empty">No tasks match these filters</td></tr>`;
+      return;
+    }
+    body.innerHTML = list.map(t => `
+      <tr onclick="openDetail('${t.ID}')">
+        <td>${escapeHtml(t.Title)}</td>
+        <td>${escapeHtml(t.Project || '—')}</td>
+        <td>${escapeHtml(t.AssignedTo)}</td>
+        <td>${t.Priority}</td>
+        <td class="${isOverdue(t) ? 'overdue' : ''}">${fmtDate(t.DueDate)}</td>
+        <td><span class="status-pill status-${t.Status.replace(' ','-')}">${t.Status}</span></td>
+      </tr>
+    `).join('');
+  }
+
+  const STAGE_LABELS = {
+    'Assigned': 'Assigned to Designer',
+    'Submitted': 'Awaiting Approval',
+    'ChangesRequested': 'Changes Requested',
+    'AwaitingJobID': 'Awaiting Job ID',
+    'InProduction': 'In Production (Block)',
+    'Closed': 'Closed'
+  };
+  const STAGE_COLORS = {
+    'Assigned': 'status-Pending',
+    'Submitted': 'status-In-Progress',
+    'ChangesRequested': 'status-Pending',
+    'AwaitingJobID': 'status-In-Progress',
+    'InProduction': 'status-In-Progress',
+    'Closed': 'status-Done'
+  };
+
+  function designSlaText(t) {
+    if (t.Stage === 'AwaitingJobID' && t.ApprovedAt) {
+      const hrs = businessHoursSince(t.ApprovedAt);
+      return hrs >= 24
+        ? `<span class="due overdue">Job ID overdue — ${Math.floor(hrs)}h since approval (limit 24h)</span>`
+        : `<span class="due">Job ID due in ~${Math.max(0, Math.ceil(24 - hrs))}h</span>`;
+    }
+    if (t.Stage === 'InProduction' && t.JobIDCreatedAt) {
+      const hrs = businessHoursSince(t.JobIDCreatedAt);
+      return hrs >= 48
+        ? `<span class="due overdue">Block overdue — ${Math.floor(hrs)}h since Job ID (limit 48h)</span>`
+        : `<span class="due">Block due in ~${Math.max(0, Math.ceil(48 - hrs))}h</span>`;
+    }
+    return '';
+  }
+
+  // Approximate client-side business-hours-elapsed (skips Sunday), just for display —
+  // the authoritative check/alert happens server-side in checkDesignSLAs().
+  function businessHoursSince(dateStr) {
+    const start = new Date(dateStr);
+    const now = new Date();
+    let total = 0;
+    let cursor = new Date(start);
+    while (cursor < now) {
+      const dayEnd = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1);
+      const segEnd = dayEnd < now ? dayEnd : now;
+      if (cursor.getDay() !== 0) total += (segEnd - cursor) / 3600000;
+      cursor = segEnd;
+    }
+    return total;
+  }
+
+  function renderDesignView(list) {
+    document.getElementById('designView').style.display = 'block';
+    const container = document.getElementById('designView');
+    if (!list.length) {
+      container.innerHTML = '<div class="empty">Koi Design Job nahi hai in filters ke sath.</div>';
+      return;
+    }
+    container.innerHTML = `<div class="cards">` + list.map(t => `
+      <div class="card" onclick="openDetail('${t.ID}')">
+        <div class="top-row">
+          <div class="title">${escapeHtml(t.Title)}</div>
+          <span class="status-pill ${STAGE_COLORS[t.Stage] || 'status-Pending'}">${STAGE_LABELS[t.Stage] || t.Stage}</span>
+        </div>
+        <div class="meta">
+          ${t.Project ? `<span class="badge project">${escapeHtml(t.Project)}</span>` : ''}
+          <span class="assignee">Designer: ${escapeHtml(t.AssignedTo)}</span>
+          <span class="assignee">Assigner: ${escapeHtml(t.AssignedBy)}</span>
+          ${t.JobID ? `<span class="badge priority-Low">Job ID: ${escapeHtml(t.JobID)}</span>` : ''}
+        </div>
+        <div style="margin-top:8px;">${designSlaText(t)}</div>
+      </div>
+    `).join('') + `</div>`;
+  }
+
+  function setView(v) {
+    currentView = v;
+    document.getElementById('viewBoardBtn').classList.toggle('active', v === 'board');
+    document.getElementById('viewListBtn').classList.toggle('active', v === 'list');
+    document.getElementById('viewDesignBtn').classList.toggle('active', v === 'design');
+    render();
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  // ============ NEW TASK ============
+  function openNewTaskModal() {
+    if (!myName()) { document.getElementById('nameGate').style.display = 'flex'; return; }
+    document.getElementById('ntType').value = 'General';
+    document.getElementById('ntTitle').value = '';
+    document.getElementById('ntDesc').value = '';
+    document.getElementById('ntProject').value = '';
+    document.getElementById('ntPriority').value = 'Normal';
+    document.getElementById('ntDueDate').value = '';
+    document.getElementById('ntAttachment').value = '';
+    document.getElementById('ntAttachStatus').textContent = '';
+    if (myName()) document.getElementById('ntAssignBy').value = myName();
+    document.getElementById('newTaskOverlay').classList.add('show');
+  }
+
+  async function submitNewTask() {
+    const title = document.getElementById('ntTitle').value.trim();
+    const assignedTo = document.getElementById('ntAssignTo').value;
+    const assignedBy = document.getElementById('ntAssignBy').value;
+    const dueDate = document.getElementById('ntDueDate').value;
+    if (!title || !assignedTo || !assignedBy || !dueDate) {
+      alert('Title, Assigned By, Assign To, aur Due Date zaroori hain.');
+      return;
+    }
+    const btn = document.getElementById('ntSubmitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Creating...';
+    try {
+      const attachInput = document.getElementById('ntAttachment');
+      const attachStatus = document.getElementById('ntAttachStatus');
+      const attachmentUrl = await uploadAttachment(attachInput, attachStatus);
+
+      const payload = {
+        action: 'createTask',
+        taskType: document.getElementById('ntType').value,
+        title,
+        description: document.getElementById('ntDesc').value.trim(),
+        project: document.getElementById('ntProject').value.trim(),
+        priority: document.getElementById('ntPriority').value,
+        dueDate,
+        assignedTo,
+        assignedBy,
+        attachmentUrl: attachmentUrl || ''
+      };
+      await apiPost(payload);
+      closeModal('newTaskOverlay');
+      await loadAll();
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Create Task';
+    }
+  }
+
+  // ============ TASK DETAIL ============
+  async function openDetail(id) {
+    activeTaskId = id;
+    const t = tasks.find(x => x.ID === id);
+    if (!t) return;
+    document.getElementById('dTitle').textContent = t.Title;
+    document.getElementById('dProject').textContent = t.Project || 'No Project';
+    document.getElementById('dPriority').textContent = t.Priority;
+    document.getElementById('dPriority').className = 'badge priority-' + t.Priority;
+    document.getElementById('dAssignee').textContent = t.AssignedTo + ' (from ' + t.AssignedBy + ')';
+    const overdue = isOverdue(t);
+    document.getElementById('dDue').textContent = (overdue ? 'Overdue — ' : 'Due ') + fmtDate(t.DueDate);
+    document.getElementById('dDue').className = 'due ' + (overdue ? 'overdue' : '');
+    document.getElementById('dDesc').textContent = t.Description || 'No description added.';
+
+    const area = document.getElementById('dActionArea');
+    if (t.TaskType === 'DesignJob') {
+      area.innerHTML = designActionAreaHTML(t);
+    } else {
+      const statuses = ['Pending', 'In Progress', 'Done'];
+      area.innerHTML = `<div class="status-buttons">` + statuses.map(s => `
+        <button class="${s === t.Status ? 'current' : 'secondary'}" onclick="changeStatus('${t.ID}','${s}')">${s}</button>
+      `).join('') + `</div>`;
+    }
+
+    document.getElementById('detailOverlay').classList.add('show');
+    loadComments(id);
+  }
+
+  // Builds the stage-aware action panel for a Design Job: shows only the controls
+  // relevant to the current stage and to whether the logged-in person is the
+  // designer (AssignedTo) or the assigner (AssignedBy).
+  function designActionAreaHTML(t) {
+    const me = myName();
+    const isDesigner = me === t.AssignedTo;
+    const isAssigner = me === t.AssignedBy;
+    const stageLabel = STAGE_LABELS[t.Stage] || t.Stage;
+    const slaLine = designSlaText(t);
+
+    let html = `<div style="margin-bottom:14px;">
+      <span class="status-pill ${STAGE_COLORS[t.Stage] || 'status-Pending'}">${stageLabel}</span>
+      ${slaLine ? '<div style="margin-top:8px;">' + slaLine + '</div>' : ''}
+      ${t.AttachmentURL ? `<div style="margin-top:10px;"><a href="${t.AttachmentURL}" target="_blank">📎 View latest design file</a></div>` : ''}
+      ${t.JobID ? `<div style="margin-top:6px; font-size:13px;"><b>Job ID:</b> ${escapeHtml(t.JobID)}</div>` : ''}
+    </div>`;
+
+    if ((t.Stage === 'Assigned' || t.Stage === 'ChangesRequested') && isDesigner) {
+      html += `
+        <div class="field">
+          <label>Upload design file</label>
+          <input type="file" id="dsFile" accept="image/*,.pdf">
+        </div>
+        <div class="field">
+          <label>Note (optional)</label>
+          <input type="text" id="dsNote" placeholder="e.g. v2 with logo size fixed">
+        </div>
+        <div id="dsStatus" style="font-size:12px; color:var(--muted); margin-bottom:8px;"></div>
+        <button onclick="doSubmitDesign('${t.ID}')">Submit for Approval</button>`;
+    } else if (t.Stage === 'Submitted' && isAssigner) {
+      html += `
+        <div class="field">
+          <label>Comment (required if requesting changes)</label>
+          <input type="text" id="dsApprovalComment" placeholder="Feedback / changes needed">
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button onclick="doApprove('${t.ID}')">Approve</button>
+          <button class="secondary" onclick="doRequestChanges('${t.ID}')">Request Changes</button>
+        </div>`;
+    } else if (t.Stage === 'AwaitingJobID' && isDesigner) {
+      html += `
+        <div class="field">
+          <label>Job ID (from Block Creation Company)</label>
+          <input type="text" id="dsJobId" placeholder="Enter Job ID once received">
+        </div>
+        <button onclick="doConfirmJobId('${t.ID}')">Confirm Job ID</button>`;
+    } else if (t.Stage === 'InProduction' && isDesigner) {
+      html += `<button onclick="doMarkChallan('${t.ID}')">Mark Challan Received (Close Job)</button>`;
+    } else if (t.Stage === 'Closed') {
+      html += `<div class="empty" style="padding:6px 0;">Job closed.</div>`;
+    } else {
+      html += `<div class="empty" style="padding:6px 0;">Waiting on ${t.Stage === 'Submitted' ? t.AssignedBy : t.AssignedTo}.</div>`;
+    }
+    return html;
+  }
+
+  async function doSubmitDesign(id) {
+    const fileInput = document.getElementById('dsFile');
+    const statusEl = document.getElementById('dsStatus');
+    const note = document.getElementById('dsNote').value.trim();
+    const attachmentUrl = await uploadAttachment(fileInput, statusEl);
+    if (fileInput.files[0] && !attachmentUrl) { alert('File upload fail ho gaya, dobara try karein.'); return; }
+    await apiPost({ action: 'submitDesign', id, author: myName(), attachmentUrl: attachmentUrl || '', comment: note });
+    await loadAll();
+    openDetail(id);
+  }
+
+  async function doApprove(id) {
+    const comment = document.getElementById('dsApprovalComment').value.trim();
+    await apiPost({ action: 'approveDesign', id, author: myName(), comment });
+    await loadAll();
+    openDetail(id);
+  }
+
+  async function doRequestChanges(id) {
+    const comment = document.getElementById('dsApprovalComment').value.trim();
+    if (!comment) { alert('Changes request ke liye comment likhna zaroori hai.'); return; }
+    await apiPost({ action: 'requestChanges', id, author: myName(), comment });
+    await loadAll();
+    openDetail(id);
+  }
+
+  async function doConfirmJobId(id) {
+    const jobId = document.getElementById('dsJobId').value.trim();
+    if (!jobId) { alert('Job ID likhein.'); return; }
+    await apiPost({ action: 'confirmJobId', id, author: myName(), jobId });
+    await loadAll();
+    openDetail(id);
+  }
+
+  async function doMarkChallan(id) {
+    await apiPost({ action: 'markChallanReceived', id, author: myName() });
+    await loadAll();
+    openDetail(id);
+  }
+
+  async function changeStatus(id, status) {
+    await apiPost({ action: 'updateTask', id, status });
+    await loadAll();
+    openDetail(id);
+  }
+
+  async function loadComments(taskId) {
+    const res = await apiGet('getComments', { taskId });
+    const comments = res.comments || [];
+    const box = document.getElementById('dComments');
+    box.innerHTML = comments.length ? comments.map(c => `
+      <div class="comment">
+        <span class="cauthor">${escapeHtml(c.Author)}</span>
+        <span class="ctime">${fmtDate(c.Timestamp)}</span>
+        <div>${escapeHtml(c.Comment)}</div>
+        ${c.AttachmentURL ? `<div style="margin-top:4px;"><a href="${c.AttachmentURL}" target="_blank">📎 Attachment</a></div>` : ''}
+      </div>
+    `).join('') : '<div class="empty" style="padding:10px 0;">No comments yet</div>';
+  }
+
+  async function submitComment() {
+    const input = document.getElementById('dNewComment');
+    const fileInput = document.getElementById('dCommentFile');
+    const text = input.value.trim();
+    if (!text) return;
+    if (!myName()) { document.getElementById('nameGate').style.display = 'flex'; return; }
+    const attachmentUrl = await uploadAttachment(fileInput, null);
+    await apiPost({ action: 'addComment', taskId: activeTaskId, author: myName(), comment: text, attachmentUrl: attachmentUrl || '' });
+    input.value = '';
+    fileInput.value = '';
+    loadComments(activeTaskId);
+  }
+
+  // ============ MODAL HELPERS ============
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+  }
+  document.querySelectorAll('.overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('show'); });
+  });
+
+  // ============ FILTER LISTENERS ============
+  ['filterAssignee','filterProject','filterStatus'].forEach(id => {
+    document.getElementById(id).addEventListener('change', render);
+  });
+  document.getElementById('searchBox').addEventListener('input', render);
+
+  // ============ INIT ============
+  initIdentity();
+  loadAll();
+  setInterval(loadAll, 60000); // refresh every 60s so team sees each other's updates
+</script>
+
+</body>
+</html>
