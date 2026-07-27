@@ -6,203 +6,190 @@
 <title>Progressive Board</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#ece5d3;
-    --paper-dark:#ddd2b4;
-    --card:#fbf8f0;
-    --ink:#1c1a15;
-    --ink-soft:#5d574a;
-    --line:#cabd9a;
-    --line-soft:#ddd3b8;
-    --teal:#0d6e5c;
-    --teal-soft:#d9ece6;
-    --amber:#b9791d;
-    --amber-soft:#f3e3c4;
-    --red:#a3392a;
-    --red-soft:#f2ddd6;
-    --radius:4px;
-    --radius-lg:10px;
-    --shadow: 0 1px 2px rgba(28,26,21,0.06), 0 6px 16px rgba(28,26,21,0.06);
+    --navy:#0c1024;
+    --navy-soft:#151a33;
+    --bg:#f4f5f8;
+    --card:#ffffff;
+    --line:#e7e8ee;
+    --ink:#12131c;
+    --ink-soft:#6b7080;
+    --amber:#f6c343;
+    --amber-dark:#c9931b;
+    --amber-soft:#fdf1d3;
+    --green:#189d6f;
+    --green-soft:#dcf3ea;
+    --blue:#3860c9;
+    --blue-soft:#e1e8fb;
+    --red:#e0433a;
+    --red-soft:#fbe0de;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow: 0 1px 2px rgba(16,24,40,0.04), 0 10px 24px rgba(16,24,40,0.07);
   }
   *{box-sizing:border-box;}
   body{
-    margin:0;
-    background:var(--paper);
-    background-image:
-      radial-gradient(circle at 1px 1px, rgba(28,26,21,0.05) 1px, transparent 0);
-    background-size: 22px 22px;
-    color:var(--ink);
-    font-family:'Inter', -apple-system, sans-serif;
-    line-height:1.45;
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Inter', -apple-system, sans-serif; line-height:1.45;
   }
-  .mono{font-family:'Space Mono', monospace;}
-  .display{font-family:'Bebas Neue', sans-serif; letter-spacing:0.03em;}
-
-  ::selection{background:var(--amber-soft);}
+  h1,h2,h3,.display{font-family:'Plus Jakarta Sans', sans-serif; font-weight:800;}
+  .accent{color:var(--amber-dark);}
 
   header{
+    background:var(--navy); color:#fff; padding:16px 30px;
     display:flex; align-items:center; justify-content:space-between;
-    padding:16px 30px; background:var(--paper-dark); border-bottom:2px solid var(--ink);
-    position:sticky; top:0; z-index:20;
+    position:sticky; top:0; z-index:20; border-bottom:1px solid rgba(255,255,255,0.06);
   }
   .brand{display:flex; align-items:center; gap:12px;}
-  .stamp{
-    width:42px; height:42px; border-radius:50%; border:2.5px solid var(--ink);
-    display:flex; align-items:center; justify-content:center; color:var(--ink);
-    font-family:'Bebas Neue', sans-serif; font-size:16px; transform:rotate(-8deg);
-    flex-shrink:0;
+  .logo-mark{
+    width:38px; height:38px; border-radius:11px; background:var(--amber);
+    display:flex; align-items:center; justify-content:center; color:var(--navy);
+    font-family:'Plus Jakarta Sans', sans-serif; font-weight:800; font-size:15px; flex-shrink:0;
   }
-  .brand h1{font-family:'Bebas Neue', sans-serif; font-size:28px; margin:0; letter-spacing:0.04em; line-height:1;}
-  .brand .tag{font-size:11.5px; color:var(--ink-soft); margin-top:2px; font-family:'Space Mono', monospace; letter-spacing:0.02em;}
+  .brand h1{font-size:19px; margin:0; color:#fff; letter-spacing:-0.01em;}
+  .brand .tag{display:flex; align-items:center; gap:6px; font-size:11px; color:#9aa0b4; margin-top:2px; text-transform:uppercase; letter-spacing:.05em; font-weight:600;}
+  .brand .tag .dot{width:6px; height:6px; border-radius:50%; background:var(--green); display:inline-block;}
   .who{display:flex; align-items:center; gap:10px;}
-  .who .name{font-size:13px; font-family:'Space Mono', monospace; color:var(--ink-soft);}
+  .who .name{font-size:13px; color:#c7cad6; font-weight:600;}
 
-  select, input, textarea, button{
-    font-family:'Inter', sans-serif; font-size:14px; border-radius:var(--radius); border:1.5px solid var(--line);
-    background:var(--card); color:var(--ink); padding:8px 12px;
+  select, input, textarea{
+    font-family:'Inter', sans-serif; font-size:14px; border-radius:var(--radius-sm); border:1.5px solid var(--line);
+    background:var(--card); color:var(--ink); padding:9px 12px;
   }
-  button{cursor:pointer; border:1.5px solid var(--ink); background:var(--ink); color:var(--paper); font-weight:600; transition:transform .1s;}
+  button{
+    cursor:pointer; border:none; border-radius:var(--radius-sm); font-weight:700; font-family:'Inter',sans-serif;
+    font-size:13.5px; padding:9px 16px; transition:transform .1s, opacity .1s;
+  }
   button:active{transform:translateY(1px);}
-  button.secondary{background:var(--card); color:var(--ink); border:1.5px solid var(--line);}
-  button.danger{background:var(--card); color:var(--red); border:1.5px solid var(--red-soft);}
+  button.primary, button:not(.secondary):not(.danger):not(.ghost){background:var(--amber); color:var(--navy);}
+  button.primary:hover, button:not(.secondary):not(.danger):not(.ghost):hover{opacity:0.92;}
+  button.secondary{background:rgba(255,255,255,0.08); color:#fff; border:1.5px solid rgba(255,255,255,0.16);}
+  header button.secondary:hover{background:rgba(255,255,255,0.14);}
+  button.danger{background:var(--red-soft); color:var(--red);}
+  button.ghost{background:transparent; color:var(--ink-soft); border:1.5px solid var(--line);}
   button:disabled{opacity:0.5; cursor:not-allowed;}
-  button.small{padding:6px 10px; font-size:12px;}
+  button.small{padding:6px 11px; font-size:12px;}
+  .modal button.secondary, .login-card button.secondary{background:var(--bg); color:var(--ink); border:1.5px solid var(--line);}
+
+  .stats-strip{
+    background:var(--navy-soft); padding:18px 30px; display:grid; grid-template-columns:repeat(5,1fr); gap:8px;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .stat{text-align:left;}
+  .stat .num{font-family:'Plus Jakarta Sans', sans-serif; font-weight:800; font-size:26px; color:var(--amber); line-height:1;}
+  .stat.overdue .num{color:#ff8a7a;}
+  .stat .lbl{font-size:10.5px; color:#9aa0b4; text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-top:3px;}
 
   main{max-width:1200px; margin:0 auto; padding:26px 30px 70px;}
 
-  .stats{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:24px;}
-  .stat{
-    background:var(--card); border:1.5px solid var(--line); border-radius:var(--radius-lg); padding:14px 16px;
-    box-shadow:var(--shadow);
-  }
-  .stat .num{font-family:'Bebas Neue', sans-serif; font-size:32px; line-height:1;}
-  .stat .lbl{font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; font-family:'Space Mono', monospace;}
-  .stat.overdue .num{color:var(--red);}
-
-  .toolbar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:18px;}
+  .toolbar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:20px;}
   .filters{display:flex; gap:8px; flex-wrap:wrap;}
-  .view-toggle{display:flex; border:1.5px solid var(--ink); border-radius:var(--radius); overflow:hidden;}
-  .view-toggle button{border:none; border-radius:0; background:var(--card); color:var(--ink); font-weight:600; font-size:13px;}
-  .view-toggle button.active{background:var(--ink); color:var(--paper);}
+  .view-toggle{display:flex; background:var(--card); border:1.5px solid var(--line); border-radius:999px; padding:3px; gap:2px;}
+  .view-toggle button{border-radius:999px; background:transparent; color:var(--ink-soft); font-weight:700; font-size:13px; padding:7px 16px;}
+  .view-toggle button.active{background:var(--navy); color:#fff;}
 
   .board{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
   .col h3{
-    font-family:'Bebas Neue', sans-serif; font-size:17px; letter-spacing:.04em; color:var(--ink-soft);
-    display:flex; align-items:center; justify-content:space-between; margin:0 0 12px 2px; border-bottom:2px dashed var(--line); padding-bottom:6px;
+    font-size:14px; letter-spacing:.02em; color:var(--ink-soft); text-transform:uppercase;
+    display:flex; align-items:center; justify-content:space-between; margin:0 0 12px 4px; font-weight:800;
   }
-  .col h3 .count{background:var(--ink); color:var(--paper); border-radius:20px; padding:1px 9px; font-size:12px; font-family:'Space Mono', monospace;}
+  .col h3 .count{background:var(--line); color:var(--ink); border-radius:20px; padding:1px 9px; font-size:11.5px; font-weight:700;}
   .cards{display:flex; flex-direction:column; gap:10px; min-height:40px;}
 
   .ticket{
-    background:var(--card); border:1.5px solid var(--line); border-radius:var(--radius);
-    padding:13px 15px; cursor:pointer; position:relative; box-shadow:var(--shadow);
-    transition:transform .12s, box-shadow .12s; border-left:4px solid var(--line);
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:15px 17px; cursor:pointer; box-shadow:var(--shadow); transition:transform .12s, box-shadow .12s;
   }
-  .ticket:hover{transform:translateY(-2px); box-shadow:0 4px 20px rgba(28,26,21,0.12);}
-  .ticket.pr-High{border-left-color:var(--red);}
-  .ticket.pr-Normal{border-left-color:var(--amber);}
-  .ticket.pr-Low{border-left-color:var(--teal);}
+  .ticket:hover{transform:translateY(-2px); box-shadow:0 4px 22px rgba(16,24,40,0.12);}
   .ticket .top-row{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
   .ticket .title{font-weight:700; font-size:14.5px;}
-  .ticket .meta{margin-top:9px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;}
-  .chip{font-size:10.5px; padding:2px 8px; border-radius:20px; font-weight:700; font-family:'Space Mono', monospace; letter-spacing:.01em;}
-  .chip.project{background:var(--teal-soft); color:var(--teal);}
-  .chip.assignee{background:var(--paper-dark); color:var(--ink);}
-  .due-line{font-size:11.5px; color:var(--ink-soft); margin-top:8px; font-family:'Space Mono', monospace;}
-  .due-line.overdue{color:var(--red); font-weight:700;}
+  .ticket .meta{margin-top:10px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;}
+  .chip{font-size:10.5px; padding:3px 10px; border-radius:999px; font-weight:700; letter-spacing:.01em;}
+  .chip.project{background:var(--blue-soft); color:var(--blue);}
+  .chip.assignee{background:var(--bg); color:var(--ink); border:1px solid var(--line);}
+  .chip.priority-High{background:var(--red-soft); color:var(--red);}
+  .chip.priority-Normal{background:var(--amber-soft); color:var(--amber-dark);}
+  .chip.priority-Low{background:var(--green-soft); color:var(--green);}
+  .due-line{font-size:11.5px; color:var(--ink-soft); margin-top:9px; font-weight:600;}
+  .due-line.overdue{color:var(--red); font-weight:800;}
 
-  .ledger{width:100%; border-collapse:collapse; background:var(--card); border:1.5px solid var(--line); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow);}
-  .ledger th, .ledger td{padding:11px 13px; text-align:left; border-bottom:1px solid var(--line-soft); font-size:13.5px;}
-  .ledger th{background:var(--paper-dark); font-size:10.5px; text-transform:uppercase; color:var(--ink-soft); letter-spacing:.05em; font-family:'Space Mono', monospace;}
+  .ledger{width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);}
+  .ledger th, .ledger td{padding:12px 14px; text-align:left; border-bottom:1px solid var(--line); font-size:13.5px;}
+  .ledger th{background:var(--bg); font-size:10.5px; text-transform:uppercase; color:var(--ink-soft); letter-spacing:.05em; font-weight:800;}
   .ledger tr:last-child td{border-bottom:none;}
-  .ledger tbody tr:hover{background:var(--paper); cursor:pointer;}
-  .pill{font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:20px; font-family:'Space Mono', monospace;}
-  .pill.Pending{background:var(--amber-soft); color:var(--amber);}
-  .pill.In-Progress{background:#dbe6f0; color:#2f5d85;}
-  .pill.Done{background:var(--teal-soft); color:var(--teal);}
+  .ledger tbody tr:hover{background:var(--bg); cursor:pointer;}
+  .pill{font-size:10.5px; font-weight:800; padding:4px 11px; border-radius:999px;}
+  .pill.Pending{background:var(--amber-soft); color:var(--amber-dark);}
+  .pill.In-Progress{background:var(--blue-soft); color:var(--blue);}
+  .pill.Done{background:var(--green-soft); color:var(--green);}
 
-  .empty{text-align:center; color:var(--ink-soft); padding:44px 0; font-size:14px; font-family:'Space Mono', monospace;}
+  .empty{text-align:center; color:var(--ink-soft); padding:44px 0; font-size:14px; font-weight:600;}
 
-  /* Design job routing slip */
-  .slip{
-    background:var(--card); border:1.5px solid var(--line); border-radius:var(--radius-lg);
-    padding:16px 18px; cursor:pointer; box-shadow:var(--shadow); transition:transform .12s;
-  }
+  .slip{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; cursor:pointer; box-shadow:var(--shadow); transition:transform .12s;}
   .slip:hover{transform:translateY(-2px);}
-  .slip .top-row{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px;}
+  .slip .top-row{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:14px;}
   .slip .title{font-weight:700; font-size:15px;}
-  .stepper{display:flex; align-items:center; margin:10px 0 6px;}
+  .stepper{display:flex; align-items:flex-start; margin:14px 0 10px;}
   .step{display:flex; flex-direction:column; align-items:center; flex:1; position:relative;}
   .step .dot{
-    width:20px; height:20px; border-radius:50%; border:2.5px solid var(--line); background:var(--card);
-    display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; z-index:2;
+    width:26px; height:26px; border-radius:8px; border:2px solid var(--line); background:var(--card); color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; z-index:2;
   }
-  .step .lbl{font-size:9.5px; margin-top:5px; color:var(--ink-soft); font-family:'Space Mono', monospace; text-transform:uppercase; letter-spacing:.02em; text-align:center;}
-  .step .bar{position:absolute; top:9px; left:50%; width:100%; height:2.5px; background:var(--line); z-index:1;}
+  .step .lbl{font-size:10px; margin-top:6px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.02em; text-align:center; font-weight:700;}
+  .step .bar{position:absolute; top:12px; left:-50%; width:100%; height:3px; background:var(--line); z-index:1;}
   .step:first-child .bar{display:none;}
-  .step.done .dot{background:var(--teal); border-color:var(--teal); color:#fff;}
-  .step.done .bar{background:var(--teal);}
-  .step.current .dot{background:var(--amber); border-color:var(--amber); color:#fff; box-shadow:0 0 0 4px var(--amber-soft);}
+  .step.done .dot{background:var(--green); border-color:var(--green); color:#fff;}
+  .step.done .bar{background:var(--green);}
+  .step.current .dot{background:var(--amber); border-color:var(--amber); color:var(--navy); box-shadow:0 0 0 5px var(--amber-soft);}
   .step.revision .dot{background:var(--red); border-color:var(--red); color:#fff;}
-  .slip-meta{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
-  .slip-sla{margin-top:8px; font-size:12px; font-family:'Space Mono', monospace;}
-  .slip-sla.overdue{color:var(--red); font-weight:700;}
+  .slip-meta{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px;}
+  .slip-sla{margin-top:9px; font-size:12px; font-weight:700; color:var(--ink-soft);}
+  .slip-sla.overdue{color:var(--red);}
 
-  /* Modals */
-  .overlay{position:fixed; inset:0; background:rgba(20,18,14,0.5); display:none; align-items:center; justify-content:center; z-index:50; padding:20px;}
+  .overlay{position:fixed; inset:0; background:rgba(12,16,36,0.55); display:none; align-items:center; justify-content:center; z-index:50; padding:20px;}
   .overlay.show{display:flex;}
-  .modal{
-    background:var(--card); border-radius:14px; width:100%; max-width:580px; max-height:88vh;
-    overflow-y:auto; padding:26px; position:relative; border:1.5px solid var(--ink);
-  }
-  .modal h2{font-family:'Bebas Neue', sans-serif; font-size:24px; letter-spacing:.02em; margin:0 0 4px;}
-  .modal .close{position:absolute; top:16px; right:18px; background:none; border:none; color:var(--ink-soft); font-size:22px; padding:2px 8px;}
+  .modal{background:var(--card); border-radius:20px; width:100%; max-width:580px; max-height:88vh; overflow-y:auto; padding:28px; position:relative; box-shadow:0 20px 60px rgba(0,0,0,0.25);}
+  .modal h2{font-size:22px; margin:0 0 4px;}
+  .modal .close{position:absolute; top:18px; right:20px; background:none; border:none; color:var(--ink-soft); font-size:22px; padding:2px 8px;}
   .field{margin-bottom:14px;}
-  .field label{display:block; font-size:11.5px; font-weight:700; color:var(--ink-soft); margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em; font-family:'Space Mono', monospace;}
+  .field label{display:block; font-size:11.5px; font-weight:700; color:var(--ink-soft); margin-bottom:6px; text-transform:uppercase; letter-spacing:.03em;}
   .field input, .field select, .field textarea{width:100%;}
   .field textarea{resize:vertical; min-height:60px;}
   .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
   .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:20px;}
 
   .detail-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:6px;}
-  .detail-meta{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 16px;}
+  .detail-meta{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 16px;}
   .detail-desc{font-size:14px; color:var(--ink); white-space:pre-wrap; margin-bottom:16px;}
 
-  .comments{border-top:2px dashed var(--line); padding-top:14px; margin-top:6px;}
-  .comments h4{font-family:'Space Mono', monospace; margin:0 0 10px; font-size:11.5px; text-transform:uppercase; color:var(--ink-soft); letter-spacing:.05em;}
-  .comment{background:var(--paper); border-radius:8px; padding:9px 11px; margin-bottom:8px; font-size:13.5px; border-left:3px solid var(--line);}
+  .comments{border-top:1px solid var(--line); padding-top:16px; margin-top:8px;}
+  .comments h4{margin:0 0 10px; font-size:11.5px; text-transform:uppercase; color:var(--ink-soft); letter-spacing:.05em; font-weight:800;}
+  .comment{background:var(--bg); border-radius:12px; padding:10px 12px; margin-bottom:8px; font-size:13.5px;}
   .comment .cauthor{font-weight:700; font-size:12.5px;}
-  .comment .ctime{font-size:10.5px; color:var(--ink-soft); margin-left:6px; font-family:'Space Mono', monospace;}
+  .comment .ctime{font-size:10.5px; color:var(--ink-soft); margin-left:6px; font-weight:600;}
   .add-comment{display:flex; gap:8px; margin-top:10px;}
   .add-comment input{flex:1;}
 
-  .name-gate{position:fixed; inset:0; background:var(--paper); display:flex; align-items:center; justify-content:center; z-index:100;
-    background-image: radial-gradient(circle at 1px 1px, rgba(28,26,21,0.06) 1px, transparent 0); background-size:22px 22px;}
-  .ticket-card{
-    background:var(--card); border:2px solid var(--ink); border-radius:10px; padding:32px; width:100%; max-width:380px; text-align:center;
-    position:relative; box-shadow: 0 10px 30px rgba(28,26,21,0.15);
-  }
-  .ticket-card::before, .ticket-card::after{
-    content:''; position:absolute; width:20px; height:20px; background:var(--paper); border-radius:50%; top:50%; margin-top:-10px;
-  }
-  .ticket-card::before{left:-10px;}
-  .ticket-card::after{right:-10px;}
-  .ticket-card h2{font-family:'Bebas Neue', sans-serif; font-size:30px; letter-spacing:.05em; margin:0 0 2px;}
-  .ticket-card .sub{font-size:12px; color:var(--ink-soft); font-family:'Space Mono', monospace; margin-bottom:20px;}
+  .name-gate{position:fixed; inset:0; background:var(--navy); display:flex; align-items:center; justify-content:center; z-index:100;
+    background-image: radial-gradient(circle at 20% 20%, rgba(246,195,67,0.10), transparent 45%), radial-gradient(circle at 80% 80%, rgba(56,96,201,0.14), transparent 45%);}
+  .login-card{background:var(--card); border-radius:22px; padding:36px 34px; width:100%; max-width:380px; text-align:center; box-shadow:0 24px 70px rgba(0,0,0,0.35);}
+  .login-card .logo-mark{margin:0 auto 16px; width:48px; height:48px; border-radius:14px; font-size:19px;}
+  .login-card h2{font-size:24px; margin:0 0 4px;}
+  .login-card .sub{font-size:12.5px; color:var(--ink-soft); margin-bottom:22px; font-weight:600; text-transform:uppercase; letter-spacing:.04em;}
 
   .toast{
-    position:fixed; bottom:22px; right:22px; background:var(--ink); color:var(--paper); padding:11px 16px; border-radius:8px;
-    font-size:13px; z-index:200; box-shadow:0 6px 20px rgba(0,0,0,0.25); opacity:0; transform:translateY(8px); transition:all .25s;
-    pointer-events:none; max-width:320px;
+    position:fixed; bottom:22px; right:22px; background:var(--navy); color:#fff; padding:12px 18px; border-radius:12px;
+    font-size:13px; font-weight:600; z-index:200; box-shadow:0 10px 30px rgba(0,0,0,0.3); opacity:0; transform:translateY(8px);
+    transition:all .25s; pointer-events:none; max-width:320px;
   }
   .toast.show{opacity:1; transform:translateY(0);}
   .toast.error{background:var(--red);}
 
   @media (max-width:800px){
     .board{grid-template-columns:1fr;}
-    .stats{grid-template-columns:repeat(2,1fr);}
+    .stats-strip{grid-template-columns:repeat(2,1fr);}
     header{padding:14px 16px;}
     main{padding:16px 16px 70px;}
     .row2{grid-template-columns:1fr;}
@@ -212,22 +199,23 @@
 <body>
 
 <div class="name-gate" id="nameGate">
-  <div class="ticket-card">
-    <h2>Progressive Board</h2>
-    <div class="sub">JOB TICKET · TEAM ACCESS</div>
+  <div class="login-card">
+    <div class="logo-mark">PB</div>
+    <h2>Progressive <span class="accent">Board</span></h2>
+    <div class="sub">Team Task &amp; Job Portal</div>
     <select id="gateSelect" style="width:100%; margin-bottom:10px;"></select>
     <input type="password" id="gatePassword" placeholder="Password" style="width:100%; margin-bottom:10px;" onkeydown="if(event.key==='Enter') setIdentity()">
     <div id="gateError" style="color:var(--red); font-size:13px; margin-bottom:10px; display:none;"></div>
-    <button style="width:100%;" onclick="setIdentity()">Clock In</button>
+    <button style="width:100%;" onclick="setIdentity()">Log In →</button>
   </div>
 </div>
 
 <header>
   <div class="brand">
-    <div class="stamp">PB</div>
+    <div class="logo-mark">PB</div>
     <div>
       <h1>Progressive Board</h1>
-      <div class="tag">TASK &amp; JOB TRACKING — PROGRESSIVE INTERNATIONAL</div>
+      <div class="tag"><span class="dot"></span> Live · Progressive International</div>
     </div>
   </div>
   <div class="who">
@@ -237,16 +225,15 @@
   </div>
 </header>
 
-<main>
-  <div class="stats">
-    <div class="stat"><div class="num">0</div><div class="lbl">Total</div></div>
-    <div class="stat"><div class="num" id="statPending">0</div><div class="lbl">Pending</div></div>
-    <div class="stat"><div class="num" id="statProgress">0</div><div class="lbl">In Progress</div></div>
-    <div class="stat"><div class="num" id="statDone">0</div><div class="lbl">Done</div></div>
-    <div class="stat overdue"><div class="num" id="statOverdue">0</div><div class="lbl">Overdue</div></div>
-  </div>
-  <div class="stats" style="display:none;"><div class="num" id="statTotal"></div></div>
+<div class="stats-strip">
+  <div class="stat"><div class="num" id="statTotal">0</div><div class="lbl">Total Tasks</div></div>
+  <div class="stat"><div class="num" id="statPending">0</div><div class="lbl">Pending</div></div>
+  <div class="stat"><div class="num" id="statProgress">0</div><div class="lbl">In Progress</div></div>
+  <div class="stat"><div class="num" id="statDone">0</div><div class="lbl">Done</div></div>
+  <div class="stat overdue"><div class="num" id="statOverdue">0</div><div class="lbl">Overdue</div></div>
+</div>
 
+<main>
   <div class="toolbar">
     <div class="filters">
       <select id="filterAssignee"><option value="">Everyone</option></select>
@@ -278,7 +265,7 @@
 <div class="overlay" id="newTaskOverlay">
   <div class="modal">
     <button class="close" onclick="closeModal('newTaskOverlay')">&times;</button>
-    <h2>New Job Ticket</h2>
+    <h2>New Task</h2>
     <div class="field">
       <label>Type</label>
       <select id="ntType">
@@ -312,7 +299,7 @@
     <div class="detail-head">
       <h2 id="dTitle"></h2>
       <div style="display:flex; gap:6px; flex-shrink:0;">
-        <button class="secondary small" onclick="toggleEditMode()">Edit</button>
+        <button class="ghost small" onclick="toggleEditMode()">Edit</button>
         <button class="danger small" onclick="deleteCurrentTask()">Delete</button>
       </div>
     </div>
@@ -365,7 +352,7 @@
   let users = [];
   let currentView = 'board';
   let activeTaskId = null;
-  const commentsCache = {}; // taskId -> array, kept locally for instant re-render
+  const commentsCache = {};
 
   // ============ TOAST ============
   let toastTimer = null;
@@ -425,14 +412,13 @@
     });
     return res.json();
   }
-  // Fire a backend call in the background without blocking the UI. Shows a toast on failure.
   function bg(promise, failMsg) {
     promise.then(res => { if (res && res.error) showToast(failMsg + ': ' + res.error, true); })
            .catch(() => showToast(failMsg + ' — connection issue, will retry on next sync', true));
   }
 
   // ============ LOAD DATA ============
-  async function loadAll(showSpinnerToast) {
+  async function loadAll() {
     const [taskRes, userRes] = await Promise.all([apiGet('getTasks'), apiGet('getUsers')]);
     tasks = taskRes.tasks || [];
     users = userRes.users || [];
@@ -481,7 +467,6 @@
       return true;
     });
   }
-
   function isOverdue(t) {
     if (t.Status === 'Done') return false;
     const d = new Date(t.DueDate); d.setHours(0,0,0,0);
@@ -508,12 +493,8 @@
     const idx = tasks.findIndex(t => t.ID === id);
     if (idx > -1) tasks[idx] = { ...tasks[idx], ...patch };
   }
-  function removeLocalTask(id) {
-    tasks = tasks.filter(t => t.ID !== id);
-  }
-  function addLocalTask(task) {
-    tasks.unshift(task);
-  }
+  function removeLocalTask(id) { tasks = tasks.filter(t => t.ID !== id); }
+  function addLocalTask(task) { tasks.unshift(task); }
 
   // ============ RENDER ============
   function render() {
@@ -539,13 +520,14 @@
   function ticketHTML(t) {
     const overdue = isOverdue(t);
     return `
-      <div class="ticket pr-${t.Priority}" onclick="openDetail('${t.ID}')">
+      <div class="ticket" onclick="openDetail('${t.ID}')">
         <div class="top-row"><div class="title">${escapeHtml(t.Title)}</div></div>
         <div class="meta">
           ${t.Project ? `<span class="chip project">${escapeHtml(t.Project)}</span>` : ''}
+          <span class="chip priority-${t.Priority}">${t.Priority}</span>
           <span class="chip assignee">${escapeHtml(t.AssignedTo)}</span>
         </div>
-        <div class="due-line ${overdue ? 'overdue' : ''}">${overdue ? 'OVERDUE · ' : 'DUE '}${fmtDate(t.DueDate)}</div>
+        <div class="due-line ${overdue ? 'overdue' : ''}">${overdue ? 'Overdue · ' : 'Due '}${fmtDate(t.DueDate)}</div>
       </div>`;
   }
 
@@ -591,7 +573,6 @@
     'Assigned': 'Assigned to Designer', 'Submitted': 'Awaiting Approval', 'ChangesRequested': 'Changes Requested',
     'AwaitingJobID': 'Awaiting Job ID', 'InProduction': 'In Production', 'Closed': 'Closed'
   };
-
   function stepperHTML(t) {
     const cur = stageNodeIndex(t.Stage);
     const isRevision = t.Stage === 'ChangesRequested';
@@ -604,7 +585,6 @@
       return `<div class="step ${cls}"><div class="bar"></div><div class="dot">${mark}</div><div class="lbl">${label}</div></div>`;
     }).join('') + `</div>`;
   }
-
   function businessHoursSince(dateStr) {
     const start = new Date(dateStr), now = new Date();
     let total = 0, cursor = new Date(start);
@@ -629,7 +609,6 @@
     }
     return '';
   }
-
   function renderDesignView(list) {
     document.getElementById('designView').style.display = 'block';
     const container = document.getElementById('designView');
@@ -645,7 +624,7 @@
           ${t.Project ? `<span class="chip project">${escapeHtml(t.Project)}</span>` : ''}
           <span class="chip assignee">Designer: ${escapeHtml(t.AssignedTo)}</span>
           <span class="chip assignee">Assigner: ${escapeHtml(t.AssignedBy)}</span>
-          ${t.JobID ? `<span class="chip assignee mono">Job ID: ${escapeHtml(t.JobID)}</span>` : ''}
+          ${t.JobID ? `<span class="chip assignee">Job ID: ${escapeHtml(t.JobID)}</span>` : ''}
         </div>
         ${designSlaText(t)}
       </div>`).join('') + `</div>`;
@@ -720,7 +699,7 @@
     document.getElementById('dPriority').textContent = t.Priority;
     document.getElementById('dAssignee').textContent = t.AssignedTo + ' (from ' + t.AssignedBy + ')';
     const overdue = isOverdue(t);
-    document.getElementById('dDue').textContent = (overdue ? 'OVERDUE · ' : 'DUE ') + fmtDate(t.DueDate);
+    document.getElementById('dDue').textContent = (overdue ? 'Overdue · ' : 'Due ') + fmtDate(t.DueDate);
     document.getElementById('dDue').className = 'due-line ' + (overdue ? 'overdue' : '');
     document.getElementById('dDesc').textContent = t.Description || 'No description added.';
     const area = document.getElementById('dActionArea');
@@ -729,7 +708,7 @@
     } else {
       const statuses = ['Pending', 'In Progress', 'Done'];
       area.innerHTML = `<div style="display:flex; gap:8px; margin-top:14px;">` + statuses.map(s => `
-        <button class="${s === t.Status ? '' : 'secondary'}" style="flex:1; font-size:13px;" onclick="changeStatus('${t.ID}','${s}')">${s}</button>
+        <button class="${s === t.Status ? '' : 'secondary'}" style="flex:1; font-size:13px; ${s===t.Status ? '' : 'background:var(--bg); color:var(--ink); border:1.5px solid var(--line);'}" onclick="changeStatus('${t.ID}','${s}')">${s}</button>
       `).join('') + `</div>`;
     }
   }
@@ -747,7 +726,7 @@
     let html = `<div style="margin:14px 0;">
       ${designSlaText(t)}
       ${t.AttachmentURL ? `<div style="margin-top:8px;"><a href="${t.AttachmentURL}" target="_blank">📎 View latest design file / link</a></div>` : ''}
-      ${t.JobID ? `<div style="margin-top:6px; font-size:13px;" class="mono"><b>Job ID:</b> ${escapeHtml(t.JobID)}</div>` : ''}
+      ${t.JobID ? `<div style="margin-top:6px; font-size:13px;"><b>Job ID:</b> ${escapeHtml(t.JobID)}</div>` : ''}
     </div>`;
 
     if ((t.Stage === 'Assigned' || t.Stage === 'ChangesRequested') && isDesigner) {
@@ -760,7 +739,7 @@
         <div class="field"><label>Comment (required if requesting changes)</label><input type="text" id="dsApprovalComment" placeholder="Feedback / changes needed"></div>
         <div style="display:flex; gap:8px;">
           <button onclick="doApprove('${t.ID}')">Approve</button>
-          <button class="secondary" onclick="doRequestChanges('${t.ID}')">Request Changes</button>
+          <button class="secondary" style="background:var(--bg); color:var(--ink); border:1.5px solid var(--line);" onclick="doRequestChanges('${t.ID}')">Request Changes</button>
         </div>`;
     } else if (t.Stage === 'AwaitingJobID' && isDesigner) {
       html += `
@@ -904,7 +883,7 @@
   // ============ INIT ============
   initIdentity();
   loadAll();
-  setInterval(loadAll, 45000); // background sync only — never blocks user actions
+  setInterval(loadAll, 45000);
 </script>
 
 </body>
