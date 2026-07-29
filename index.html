@@ -358,7 +358,7 @@
 <script>
   // ============ CONFIG ============
   const API_URL = 'https://script.google.com/macros/s/AKfycbwkIoqHjCdEDo0d2q4IV7B81VKtX5tcEJB3QQFD3extPHfbMPedMPH38slKIO7FvekC/exec';
-  const ADMIN_NAME = 'Osama'; // must match the Name exactly (case-sensitive) as it appears in the Users tab
+  const ADMIN_NAME = 'Osama Junaid'; // must match the Name exactly (case-sensitive) as it appears in the Users tab
   const SHEET_URL = 'PASTE_YOUR_GOOGLE_SHEET_URL_HERE'; // the Google Sheet's share link
 
   // ============ STATE ============
@@ -386,10 +386,13 @@
       const user = JSON.parse(saved);
       document.getElementById('nameGate').style.display = 'none';
       document.getElementById('whoAmI').textContent = user.name + (user.designation ? ' · ' + user.designation : '');
-      document.getElementById('sheetBtn').style.display = (user.name === ADMIN_NAME) ? 'inline-block' : 'none';
+      document.getElementById('sheetBtn').style.display = isAdmin(user.name) ? 'inline-block' : 'none';
     } else {
       document.getElementById('nameGate').style.display = 'flex';
     }
+  }
+  function isAdmin(name) {
+    return (name || '').trim().toLowerCase() === ADMIN_NAME.trim().toLowerCase();
   }
   async function setIdentity() {
     const name = document.getElementById('gateSelect').value;
@@ -421,7 +424,7 @@
     document.getElementById('gatePassword').value = '';
     document.getElementById('nameGate').style.display = 'none';
     document.getElementById('whoAmI').textContent = res.name + (res.designation ? ' · ' + res.designation : '');
-    document.getElementById('sheetBtn').style.display = (res.name === ADMIN_NAME) ? 'inline-block' : 'none';
+    document.getElementById('sheetBtn').style.display = isAdmin(res.name) ? 'inline-block' : 'none';
   }
   function logout() {
     localStorage.removeItem('pb_identity');
