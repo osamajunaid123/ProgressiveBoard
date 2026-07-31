@@ -788,6 +788,17 @@
     }
   }
 
+  function relevantPersonChip(t) {
+    const me = myName();
+    if (t.AssignedTo === me && t.AssignedBy !== me) {
+      return `<span class="chip assignee">From: ${escapeHtml(t.AssignedBy)}</span>`;
+    } else if (t.AssignedBy === me && t.AssignedTo !== me) {
+      return `<span class="chip assignee">To: ${escapeHtml(t.AssignedTo)}</span>`;
+    } else {
+      return `<span class="chip assignee">${escapeHtml(t.AssignedTo)}</span>`;
+    }
+  }
+
   function ticketHTML(t) {
     const overdue = isOverdue(t);
     return `
@@ -796,7 +807,7 @@
         <div class="meta">
           ${t.Project ? `<span class="chip project">${escapeHtml(t.Project)}</span>` : ''}
           <span class="chip priority-${t.Priority}">${t.Priority}</span>
-          <span class="chip assignee">${escapeHtml(t.AssignedTo)}</span>
+          ${relevantPersonChip(t)}
         </div>
         <div class="due-line ${overdue ? 'overdue' : ''}">${overdue ? 'Overdue · ' : 'Due '}${fmtDate(t.DueDate)}</div>
       </div>`;
