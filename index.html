@@ -370,7 +370,8 @@
       <div class="field"><label>Priority</label><select id="ntPriority"><option>Normal</option><option>High</option><option>Low</option></select></div>
     </div>
     <div class="field"><label>Due Date</label><input type="date" id="ntDueDate"></div>
-    <div class="field"><label>Reference link (optional)</label><input type="text" id="ntAttachment" placeholder="Paste a Drive/WhatsApp/image link"></div>
+    <div class="field"><label>Attach file (image/PDF, optional)</label><input type="file" id="ntFile" accept="image/*,.pdf"><div id="ntFileStatus" style="font-size:12px; color:var(--ink-soft); margin-top:4px;"></div></div>
+    <div class="field"><label>Or paste a reference link (optional)</label><input type="text" id="ntAttachment" placeholder="Paste a Drive/WhatsApp/image link"></div>
     <div class="modal-actions">
       <button class="secondary" onclick="closeModal('newTaskOverlay')">Cancel</button>
       <button id="ntSubmitBtn" onclick="submitNewTask()">Create Task</button>
@@ -383,7 +384,10 @@
   <div class="modal">
     <button class="close" onclick="closeModal('detailOverlay')">&times;</button>
     <div class="detail-head">
-      <h2 id="dTitle"></h2>
+      <div>
+        <h2 id="dTitle"></h2>
+        <div id="dSubtitle" style="font-size:13px; color:var(--ink-soft); margin-top:2px; display:none;"></div>
+      </div>
       <div style="display:flex; gap:6px; flex-shrink:0;">
         <button class="ghost small" onclick="toggleEditMode()">Edit</button>
         <button class="danger small" onclick="deleteCurrentTask()">Delete</button>
@@ -421,7 +425,7 @@
       <div id="dComments"></div>
       <div class="add-comment">
         <input type="text" id="dNewComment" placeholder="Add a comment...">
-        <input type="text" id="dCommentLink" placeholder="link (optional)" style="max-width:150px;">
+        <input type="file" id="dCommentFile" style="max-width:130px; font-size:11px;">
         <button onclick="submitComment()">Send</button>
       </div>
     </div>
@@ -500,12 +504,17 @@
     document.getElementById('nameGate').style.display = 'none';
     document.getElementById('whoAmI').textContent = res.name + (res.designation ? ' · ' + res.designation : '');
     document.getElementById('sheetBtn').style.display = isAdmin(res.name) ? 'inline-block' : 'none';
+    document.getElementById('filterAssignee').value = res.name;
+    defaultFilterApplied = true;
+    render();
   }
   function logout() {
     localStorage.removeItem('pb_identity');
     document.getElementById('nameGate').style.display = 'flex';
     document.getElementById('whoAmI').textContent = '';
     document.getElementById('sheetBtn').style.display = 'none';
+    document.getElementById('filterAssignee').value = '';
+    defaultFilterApplied = false;
   }
   function myName() {
     const saved = localStorage.getItem('pb_identity');
@@ -531,13 +540,39 @@
            .catch(() => showToast(failMsg + ' — connection issue, will retry on next sync', true));
   }
 
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Uploads a <input type=file> selection to Drive via the backend. Returns the
+  // file URL, or null if no file was selected. Shows a small status line while working.
+  async function uploadAttachment(inputEl, statusEl) {
+    const file = inputEl.files[0];
+    if (!file) return null;
+    if (statusEl) statusEl.textContent = 'Uploading ' + file.name + '...';
+    const data = await fileToBase64(file);
+    const res = await apiPost({ action: 'uploadFile', data, fileName: file.name, mimeType: file.type });
+    if (statusEl) statusEl.textContent = res.success ? ('✓ ' + file.name) : (res.error || 'Upload failed');
+    return res.success ? res.url : null;
+  }
+
   // ============ LOAD DATA ============
+  let defaultFilterApplied = false;
   async function loadAll() {
     const [taskRes, userRes] = await Promise.all([apiGet('getTasks'), apiGet('getUsers')]);
     tasks = taskRes.tasks || [];
     users = userRes.users || [];
     populateUserDropdowns();
     populateProjectFilter();
+    if (!defaultFilterApplied && myName()) {
+      document.getElementById('filterAssignee').value = myName();
+      defaultFilterApplied = true;
+    }
     render();
     loadActivity();
   }
@@ -825,12 +860,14 @@
     return `
       <div class="slip" onclick="openDetail('${t.ID}')" style="${compact ? 'padding:14px 16px;' : ''}">
         <div class="top-row">
-          <div class="title">${escapeHtml(t.Title)} ${t.Priority === 'High' ? '🔥' : ''}</div>
+          <div>
+            <div class="title">${escapeHtml(t.Client || t.Title)} ${t.Priority === 'High' ? '🔥' : ''}</div>
+            ${t.Client ? `<div style="font-size:12.5px; color:var(--ink-soft); margin-top:2px;">${escapeHtml(t.Title)}</div>` : ''}
+          </div>
           <span class="pill ${STAGE_PILL_CLASS[t.Stage] || 'Pending'}">${STAGE_LABELS[t.Stage] || t.Stage}</span>
         </div>
         <div class="slip-meta">
           <span class="chip project">${jobTypeLabel(t)}</span>
-          ${t.Client ? `<span class="chip assignee">Client: ${escapeHtml(t.Client)}</span>` : ''}
           <span class="chip assignee">Designer: ${escapeHtml(t.AssignedTo)}</span>
           <span class="chip assignee">By: ${escapeHtml(t.AssignedBy)}</span>
           ${t.JobID ? `<span class="chip assignee">Job ID: ${escapeHtml(t.JobID)}</span>` : ''}
@@ -936,6 +973,8 @@
     document.getElementById('ntPriority').value = 'Normal';
     document.getElementById('ntDueDate').value = '';
     document.getElementById('ntAttachment').value = '';
+    document.getElementById('ntFile').value = '';
+    document.getElementById('ntFileStatus').textContent = '';
     if (myName()) document.getElementById('ntAssignBy').value = myName();
     onTaskTypeChange();
     document.getElementById('newTaskOverlay').classList.add('show');
@@ -955,6 +994,12 @@
     if (taskType === 'DesignJob' && !client) { showToast('Client ka naam zaroori hai', true); return; }
     if (jobType === 'FactoryBlock' && !existingJobId) { showToast('Existing Job ID zaroori hai Factory Block Request ke liye', true); return; }
 
+    const btn = document.getElementById('ntSubmitBtn');
+    btn.disabled = true; btn.textContent = 'Creating...';
+    const uploadedUrl = await uploadAttachment(document.getElementById('ntFile'), document.getElementById('ntFileStatus'));
+    const finalAttachment = uploadedUrl || document.getElementById('ntAttachment').value.trim();
+    btn.disabled = false; btn.textContent = 'Create Task';
+
     const isUrgent = myName_isUrgent(assignedBy);
     const priority = isUrgent ? 'High' : document.getElementById('ntPriority').value;
     const tempId = 'temp-' + Date.now();
@@ -965,9 +1010,9 @@
       Priority: priority, Status: 'Pending', DueDate: dueDate,
       CreatedDate: now, LastUpdated: now, TaskType: taskType,
       Stage: taskType === 'DesignJob' ? 'NewRequest' : '',
-      AttachmentURL: document.getElementById('ntAttachment').value.trim(),
+      AttachmentURL: finalAttachment,
       JobID: existingJobId, ApprovedAt: '', JobIDCreatedAt: '', ChallanReceivedAt: '', Checklist: '[]',
-      Client: client, JobType: jobType, ReceivedBy: '', BlockReceivedAt: '', ChallanNumber: '', ReminderCount: 0, LastReminderAt: ''
+      Client: client, JobType: jobType, ReceivedBy: '', BlockReceivedAt: '', ChallanNumber: '', ReminderCount: 0, LastReminderAt: '', DesigningStartedAt: ''
     };
     addLocalTask(optimisticTask);
     closeModal('newTaskOverlay');
@@ -976,7 +1021,7 @@
 
     const payload = { action: 'createTask', taskType, jobType, client, jobId: existingJobId, title, description: optimisticTask.Description,
       project: optimisticTask.Project, priority: document.getElementById('ntPriority').value, dueDate, assignedTo, assignedBy,
-      attachmentUrl: optimisticTask.AttachmentURL };
+      attachmentUrl: finalAttachment };
     const res = await apiPost(payload);
     if (res.success) { patchLocalTask(tempId, { ID: res.id }); render(); }
     else { removeLocalTask(tempId); render(); showToast('Creation failed: ' + (res.error || ''), true); }
@@ -999,7 +1044,11 @@
   }
 
   function renderDetailView(t) {
-    document.getElementById('dTitle').textContent = t.Title;
+    const showClientFirst = t.TaskType === 'DesignJob' && t.Client;
+    document.getElementById('dTitle').textContent = showClientFirst ? t.Client : t.Title;
+    const subtitle = document.getElementById('dSubtitle');
+    if (showClientFirst) { subtitle.textContent = t.Title; subtitle.style.display = 'block'; }
+    else { subtitle.style.display = 'none'; }
     document.getElementById('dProject').textContent = t.Project || 'No Project';
     document.getElementById('dPriority').textContent = t.Priority;
     document.getElementById('dAssignee').textContent = t.AssignedTo + ' (from ' + t.AssignedBy + ')';
@@ -1045,7 +1094,8 @@
       html += `<button onclick="doSendProductionApproval('${t.ID}')">Send Production Approval Email</button>`;
     } else if ((t.Stage === 'Designing' || t.Stage === 'RedesignRequired') && isDesigner) {
       html += `
-        <div class="field"><label>Design file link</label><input type="text" id="dsFile" placeholder="Paste Drive/WhatsApp/image link"></div>
+        <div class="field"><label>Attach design file (image/PDF)</label><input type="file" id="dsFile" accept="image/*,.pdf"><div id="dsFileStatus" style="font-size:12px; color:var(--ink-soft); margin-top:4px;"></div></div>
+        <div class="field"><label>Or paste a link instead (optional)</label><input type="text" id="dsFileLink" placeholder="Paste Drive/WhatsApp/image link"></div>
         <div class="field"><label>Note (optional)</label><input type="text" id="dsNote" placeholder="e.g. v2 with logo size fixed"></div>
         <button onclick="doSubmitForApproval('${t.ID}')">Submit for Approval</button>`;
     } else if (t.Stage === 'WaitingForApproval' && isRequester) {
@@ -1069,7 +1119,8 @@
     } else if (t.Stage === 'BlockReceived' && isDesigner) {
       html += `
         <div class="field"><label>Challan number</label><input type="text" id="dsChallanNumber" placeholder="Challan #"></div>
-        <div class="field"><label>Challan file link (optional)</label><input type="text" id="dsChallanLink" placeholder="Paste WhatsApp/Drive link"></div>
+        <div class="field"><label>Attach challan file (image/PDF)</label><input type="file" id="dsChallanFile" accept="image/*,.pdf"><div id="dsChallanFileStatus" style="font-size:12px; color:var(--ink-soft); margin-top:4px;"></div></div>
+        <div class="field"><label>Or paste a link instead (optional)</label><input type="text" id="dsChallanLink" placeholder="Paste WhatsApp/Drive link"></div>
         <button onclick="doUploadChallan('${t.ID}')">Upload Challan &amp; Complete</button>`;
     } else if (t.Stage === 'Completed') {
       html += `<div class="empty" style="padding:6px 0;">Job completed.</div>`;
@@ -1081,12 +1132,13 @@
   }
 
   async function doStartDesigning(id) {
-    patchLocalTask(id, { Stage: 'Designing' });
-    refreshDetailIfOpen(id); render(); showToast('Designing started');
+    patchLocalTask(id, { Stage: 'Designing', Status: 'In Progress', DesigningStartedAt: new Date().toISOString() });
+    refreshDetailIfOpen(id); render(); showToast('Designing started — marked In Progress');
     bg(apiPost({ action: 'startDesigning', id, author: myName() }), 'Failed to start');
   }
   async function doSubmitForApproval(id) {
-    const link = document.getElementById('dsFile').value.trim();
+    const uploadedUrl = await uploadAttachment(document.getElementById('dsFile'), document.getElementById('dsFileStatus'));
+    const link = uploadedUrl || document.getElementById('dsFileLink').value.trim();
     const note = document.getElementById('dsNote').value.trim();
     patchLocalTask(id, { Stage: 'WaitingForApproval', AttachmentURL: link || tasks.find(t=>t.ID===id).AttachmentURL });
     optimisticComment(id, note || 'Design submitted for approval.', link);
@@ -1132,8 +1184,9 @@
   }
   async function doUploadChallan(id) {
     const challanNumber = document.getElementById('dsChallanNumber').value.trim();
-    const link = document.getElementById('dsChallanLink').value.trim();
     if (!challanNumber) { showToast('Challan number zaroori hai', true); return; }
+    const uploadedUrl = await uploadAttachment(document.getElementById('dsChallanFile'), document.getElementById('dsChallanFileStatus'));
+    const link = uploadedUrl || document.getElementById('dsChallanLink').value.trim();
     patchLocalTask(id, { Stage: 'Completed', Status: 'Done', ChallanNumber: challanNumber, ChallanReceivedAt: new Date().toISOString() });
     optimisticComment(id, 'Challan #' + challanNumber + ' uploaded — job completed.', link);
     refreshDetailIfOpen(id); render(); showToast('Job completed');
@@ -1207,14 +1260,14 @@
   }
   async function submitComment() {
     const input = document.getElementById('dNewComment');
-    const linkInput = document.getElementById('dCommentLink');
+    const fileInput = document.getElementById('dCommentFile');
     const text = input.value.trim();
     if (!text) return;
     if (!myName()) { document.getElementById('nameGate').style.display = 'flex'; return; }
-    const link = linkInput.value.trim();
-    optimisticComment(activeTaskId, text, link);
-    input.value = ''; linkInput.value = '';
-    bg(apiPost({ action: 'addComment', taskId: activeTaskId, author: myName(), comment: text, attachmentUrl: link }), 'Comment failed to save');
+    const link = await uploadAttachment(fileInput, null);
+    optimisticComment(activeTaskId, text, link || '');
+    input.value = ''; fileInput.value = '';
+    bg(apiPost({ action: 'addComment', taskId: activeTaskId, author: myName(), comment: text, attachmentUrl: link || '' }), 'Comment failed to save');
   }
 
   // ============ CHECKLIST ============
@@ -1330,7 +1383,7 @@
   // ============ INIT ============
   initIdentity();
   loadAll();
-  setInterval(loadAll, 45000);
+  setInterval(loadAll, 300000); // background sync every 5 minutes — your own actions still show up instantly (optimistic)
 </script>
 
 </body>
