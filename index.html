@@ -1159,6 +1159,7 @@
         </div>`;
     } else if (t.Stage === 'WaitingForJobID' && isDesigner) {
       html += `
+        <button class="secondary" style="background:var(--bg); color:var(--ink); border:1.5px solid var(--line); margin-bottom:12px;" onclick="doSendArtworkEmail('${t.ID}')">✉️ Send Email</button>
         <div class="field"><label>Job ID (factory reply)</label><input type="text" id="dsJobId" placeholder="Enter Job ID once received"></div>
         <button onclick="doReceiveJobId('${t.ID}')">Save Job ID</button>`;
     } else if (t.Stage === 'JobIDReceived' && isDesigner) {
@@ -1166,7 +1167,7 @@
     } else if (t.Stage === 'WaitingForBlock' && isDesigner) {
       html += `
         ${isOverdueBlock(t) ? `<button class="secondary" style="background:var(--amber-soft); color:var(--amber-dark); border:1.5px solid var(--amber); margin-bottom:10px;" onclick="openReminderComposer('${t.ID}')">Send Reminder (#${(t.ReminderCount||0)+1})</button>` : ''}
-        <div class="field"><label>Received by</label><input type="text" id="dsReceivedBy" placeholder="Name of person who received the block" value="${escapeHtml(me)}"></div>
+        <div class="field"><label>Received by</label><input type="text" id="dsReceivedBy" placeholder="Name of person who actually received the block"></div>
         <button onclick="doMarkBlockReceived('${t.ID}')">Mark Block Received</button>`;
     } else if (t.Stage === 'BlockReceived' && isDesigner) {
       html += `
@@ -1201,9 +1202,20 @@
   async function doApproveArtwork(id) {
     const comment = document.getElementById('dsApprovalComment').value.trim();
     patchLocalTask(id, { Stage: 'WaitingForJobID' });
-    optimisticComment(id, comment || 'Approved. Artwork emailed to factory automatically.');
-    refreshDetailIfOpen(id); render(); showToast('Approved — artwork emailed to factory');
+    optimisticComment(id, comment || 'Approved. Designer will send the artwork email to the factory.');
+    refreshDetailIfOpen(id); render(); showToast('Approved — designer ko notify ho gaya');
     bg(apiPost({ action: 'approveArtwork', id, author: myName(), comment }), 'Approve failed');
+  }
+  async function doSendArtworkEmail(id) {
+    showToast('Sending email...');
+    const res = await apiPost({ action: 'sendArtworkEmail', id, author: myName() });
+    if (res.success) {
+      optimisticComment(id, 'Artwork email sent to factory.');
+      refreshDetailIfOpen(id); render();
+      showToast('Email sent to factory');
+    } else {
+      showToast('Email failed: ' + (res.error || 'unknown error'), true);
+    }
   }
   async function doRejectArtwork(id) {
     const comment = document.getElementById('dsApprovalComment').value.trim();
@@ -1394,6 +1406,7 @@
     commented: 'commented on', new_job: 'created job', urgent_job: 'marked URGENT',
     approval_request: 'submitted for approval', approved: 'approved', rejected: 'rejected — redesign required',
     jobid_received: 'saved Job ID for', second_email_sent: 'sent production approval for',
+    first_email_sent: 'sent artwork email for',
     reminder_sent: 'sent a reminder for', overdue_block: 'flagged overdue block on',
     block_received: 'marked block received on', challan_uploaded: 'uploaded challan for'
   };
