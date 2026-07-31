@@ -235,6 +235,30 @@
   .toast.show{opacity:1; transform:translateY(0);}
   .toast.error{background:var(--red);}
 
+  /* Quick-add bar (MS-To-Do style) */
+  .quickadd-bar{
+    position:fixed; left:0; right:0; bottom:0; z-index:40;
+    background:var(--navy); border-top:1px solid rgba(255,255,255,0.08);
+    padding:12px 30px; display:none;
+  }
+  .quickadd-bar.show{display:block;}
+  .quickadd-wrap{max-width:1200px; margin:0 auto; position:relative; display:flex; align-items:center; gap:10px;
+    background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.14); border-radius:999px; padding:6px 8px 6px 16px;}
+  .quickadd-icon{color:var(--amber); font-weight:800; font-size:18px; flex-shrink:0;}
+  .quickadd-wrap input{
+    flex:1; background:transparent; border:none; color:#fff; font-size:14px; padding:8px 4px;
+  }
+  .quickadd-wrap input::placeholder{color:#8a90a6;}
+  .quickadd-wrap input:focus{outline:none;}
+  .mention-dropdown{
+    display:none; position:absolute; bottom:calc(100% + 8px); left:16px; min-width:220px;
+    background:var(--card); border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,0.3); overflow:hidden; z-index:41;
+  }
+  .mention-dropdown.show{display:block;}
+  .mention-item{padding:10px 14px; font-size:13.5px; color:var(--ink); cursor:pointer;}
+  .mention-item.active{background:var(--amber-soft); color:var(--amber-dark); font-weight:700;}
+  main{padding-bottom:90px;}
+
   @media (max-width:800px){
     .board{grid-template-columns:1fr;}
     .stats-strip{grid-template-columns:repeat(2,1fr);}
@@ -332,6 +356,15 @@
   </table>
   <div id="designView" style="display:none;"></div>
 </main>
+
+<div class="quickadd-bar show" id="quickAddBar">
+  <div class="quickadd-wrap">
+    <span class="quickadd-icon">+</span>
+    <input type="text" id="quickAddInput" placeholder="Type a task... use @name to assign, and today/tomorrow/a date for due date"
+      autocomplete="off" oninput="onQuickAddInput()" onkeydown="onQuickAddKeydown(event)">
+    <div class="mention-dropdown" id="mentionDropdown"></div>
+  </div>
+</div>
 
 <!-- New Task Modal -->
 <div class="overlay" id="newTaskOverlay">
@@ -1020,6 +1053,7 @@
     document.getElementById('filterJobId').style.display = isDesign ? 'inline-block' : 'none';
     document.getElementById('filterDateFrom').style.display = isDesign ? 'inline-block' : 'none';
     document.getElementById('filterDateTo').style.display = isDesign ? 'inline-block' : 'none';
+    document.getElementById('quickAddBar').classList.toggle('show', !isDesign);
     render();
   }
 
@@ -1093,6 +1127,177 @@
   function myName_isUrgent(assignedByName) {
     return (assignedByName || '').trim().toLowerCase() === 'ahsan rahim';
   }
+
+  // ============ QUICK ADD BAR (@mention + natural date) ============
+  let mentionActive = false;
+  let mentionStart = -1;
+  let mentionIndex = 0;
+  let mentionMatches = [];
+
+  function getCaretWord(input) {
+    const pos = input.selectionStart;
+    const before = input.value.slice(0, pos);
+    const at = before.lastIndexOf('@');
+    if (at === -1) return null;
+    const between = before.slice(at + 1);
+    if (/[\s]/.test(between)) return null; // an already-completed mention, not actively typing
+    return { start: at, query: between };
+  }
+
+  function onQuickAddInput() {
+    const input = document.getElementById('quickAddInput');
+    const word = getCaretWord(input);
+    if (word) {
+      mentionStart = word.start;
+      mentionMatches = users.filter(u => u.Name.toLowerCase().includes(word.query.toLowerCase()));
+      mentionIndex = 0;
+      renderMentionDropdown();
+    } else {
+      closeMentionDropdown();
+    }
+  }
+
+  function renderMentionDropdown() {
+    const dd = document.getElementById('mentionDropdown');
+    if (!mentionMatches.length) { closeMentionDropdown(); return; }
+    mentionActive = true;
+    dd.classList.add('show');
+    dd.innerHTML = mentionMatches.map((u, i) =>
+      `<div class="mention-item ${i === mentionIndex ? 'active' : ''}" onmousedown="event.preventDefault(); selectMention(${i})">${escapeHtml(u.Name)}</div>`
+    ).join('');
+  }
+  function closeMentionDropdown() {
+    mentionActive = false;
+    document.getElementById('mentionDropdown').classList.remove('show');
+  }
+  function selectMention(i) {
+    const input = document.getElementById('quickAddInput');
+    const name = mentionMatches[i].Name;
+    const before = input.value.slice(0, mentionStart);
+    const after = input.value.slice(input.selectionStart);
+    input.value = before + '@' + name + ' ' + after;
+    const newPos = (before + '@' + name + ' ').length;
+    input.focus();
+    input.setSelectionRange(newPos, newPos);
+    closeMentionDropdown();
+  }
+
+  function onQuickAddKeydown(e) {
+    if (mentionActive) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); mentionIndex = (mentionIndex + 1) % mentionMatches.length; renderMentionDropdown(); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); mentionIndex = (mentionIndex - 1 + mentionMatches.length) % mentionMatches.length; renderMentionDropdown(); return; }
+      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); selectMention(mentionIndex); return; }
+      if (e.key === 'Escape') { closeMentionDropdown(); return; }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      submitQuickAdd();
+    }
+  }
+
+  const WEEKDAYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const MONTHS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+
+  // Pulls a due date out of free text (today/tomorrow/weekday/explicit date) and
+  // returns { dueDate: 'YYYY-MM-DD'|null, cleanedText: text with the date phrase removed }.
+  function parseQuickAddDate(text) {
+    let t = text;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+    // "today"
+    let m = t.match(/\b(by\s+|on\s+)?today\b/i);
+    if (m) return { dueDate: fmt(today), cleanedText: t.replace(m[0], '').trim() };
+
+    // "tomorrow" / "tom"
+    m = t.match(/\b(by\s+|on\s+)?tom(orrow)?\b/i);
+    if (m) { const d = new Date(today); d.setDate(d.getDate()+1); return { dueDate: fmt(d), cleanedText: t.replace(m[0], '').trim() }; }
+
+    // weekday names — next occurrence (today counts if it matches)
+    for (let i = 0; i < WEEKDAYS.length; i++) {
+      const re = new RegExp('\\b(by\\s+|on\\s+|next\\s+)?' + WEEKDAYS[i] + '\\b', 'i');
+      m = t.match(re);
+      if (m) {
+        let diff = (i - today.getDay() + 7) % 7;
+        if (diff === 0 && /next\s+/i.test(m[0])) diff = 7;
+        const d = new Date(today); d.setDate(d.getDate() + diff);
+        return { dueDate: fmt(d), cleanedText: t.replace(m[0], '').trim() };
+      }
+    }
+
+    // explicit "DD/MM/YYYY" or "DD-MM-YYYY" or "DD/MM"
+    m = t.match(/\b(by\s+|on\s+)?(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?\b/);
+    if (m) {
+      const day = parseInt(m[2], 10), month = parseInt(m[3], 10) - 1;
+      let year = m[4] ? parseInt(m[4], 10) : today.getFullYear();
+      if (year < 100) year += 2000;
+      let d = new Date(year, month, day);
+      if (!m[4] && d < today) d.setFullYear(year + 1);
+      if (!isNaN(d)) return { dueDate: fmt(d), cleanedText: t.replace(m[0], '').trim() };
+    }
+
+    // "3 Aug" / "Aug 3" style
+    m = t.match(/\b(by\s+|on\s+)?(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/i)
+      || t.match(/\b(by\s+|on\s+)?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2})\b/i);
+    if (m) {
+      const monthStr = (m[3] || m[2]).slice(0,3).toLowerCase();
+      const dayNum = parseInt(m[2] && /^\d+$/.test(m[2]) ? m[2] : m[3], 10);
+      const monthIdx = MONTHS.indexOf(monthStr);
+      if (monthIdx > -1 && dayNum) {
+        let d = new Date(today.getFullYear(), monthIdx, dayNum);
+        if (d < today) d.setFullYear(d.getFullYear() + 1);
+        return { dueDate: fmt(d), cleanedText: t.replace(m[0], '').trim() };
+      }
+    }
+
+    return { dueDate: null, cleanedText: t };
+  }
+
+  async function submitQuickAdd() {
+    const input = document.getElementById('quickAddInput');
+    const raw = input.value.trim();
+    if (!raw) return;
+
+    // extract the first @Name mention that matches a real user
+    let assignedTo = '';
+    let text = raw;
+    const mentionMatch = raw.match(/@([A-Za-z .]+?)(?=\s|$)/);
+    if (mentionMatch) {
+      const candidate = users.find(u => mentionMatch[1].trim().toLowerCase().startsWith(u.Name.toLowerCase()) || u.Name.toLowerCase() === mentionMatch[1].trim().toLowerCase());
+      if (candidate) {
+        assignedTo = candidate.Name;
+        text = text.replace('@' + candidate.Name, '').trim();
+      }
+    }
+    if (!assignedTo) { showToast('@ ke sath kisi ka naam select karein', true); return; }
+
+    const { dueDate, cleanedText } = parseQuickAddDate(text);
+    const finalDueDate = dueDate || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+    const title = cleanedText.replace(/^\s*(by|on|for)\s+/i, '').replace(/\s{2,}/g, ' ').trim() || raw;
+
+    const assignedBy = myName();
+    const priority = myName_isUrgent(assignedBy) ? 'High' : 'Normal';
+    const tempId = 'temp-' + Date.now();
+    const now = new Date().toISOString();
+    addLocalTask({
+      ID: tempId, Title: title, Description: '', Project: '', AssignedBy: assignedBy, AssignedTo: assignedTo,
+      Priority: priority, Status: 'Pending', DueDate: finalDueDate, CreatedDate: now, LastUpdated: now,
+      TaskType: 'General', Stage: '', AttachmentURL: '', JobID: '', ApprovedAt: '', JobIDCreatedAt: '',
+      ChallanReceivedAt: '', Checklist: '[]', Client: '', JobType: '', ReceivedBy: '', BlockReceivedAt: '',
+      ChallanNumber: '', ReminderCount: 0, LastReminderAt: '', DesigningStartedAt: ''
+    });
+    input.value = '';
+    closeMentionDropdown();
+    render();
+    showToast('Task created for ' + assignedTo + ' — due ' + fmtDate(finalDueDate));
+
+    const res = await apiPost({ action: 'createTask', taskType: 'General', title, description: '', project: '', priority, dueDate: finalDueDate, assignedTo, assignedBy, attachmentUrl: '' });
+    if (res.success) { patchLocalTask(tempId, { ID: res.id }); render(); }
+    else { removeLocalTask(tempId); render(); showToast('Task creation failed: ' + (res.error || ''), true); }
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.quickadd-wrap')) closeMentionDropdown();
+  });
 
   // ============ TASK DETAIL ============
   function openDetail(id) {
