@@ -321,7 +321,7 @@
     <div class="view-toggle">
       <button id="viewBoardBtn" class="active" onclick="setView('board')">Board</button>
       <button id="viewListBtn" onclick="setView('list')">Ledger</button>
-      <button id="viewDesignBtn" onclick="setView('design')">Design Portal</button>
+      <button id="viewDesignBtn" onclick="setView('design')">Design Portal <span id="designNavBadge" style="display:none; background:var(--red); color:#fff; border-radius:999px; font-size:10px; padding:1px 6px; margin-left:2px;"></span></button>
     </div>
   </div>
 
@@ -750,12 +750,22 @@
     renderStats();
     updateStatActiveClasses();
     renderBoardsBar();
+    updateDesignNavBadge();
     document.getElementById('boardView').style.display = 'none';
     document.getElementById('listView').style.display = 'none';
     document.getElementById('designView').style.display = 'none';
     if (currentView === 'board') renderBoard(filtered.filter(t => t.TaskType !== 'DesignJob'));
     else if (currentView === 'list') renderList(filtered.filter(t => t.TaskType !== 'DesignJob'));
     else renderDesignView(filtered.filter(t => t.TaskType === 'DesignJob'));
+  }
+
+  function updateDesignNavBadge() {
+    const me = myName();
+    if (!me) return;
+    const mine = tasks.filter(t => t.TaskType === 'DesignJob' && t.Stage !== 'Completed' && (t.AssignedTo === me || t.AssignedBy === me));
+    const badge = document.getElementById('designNavBadge');
+    if (mine.length > 0) { badge.textContent = mine.length; badge.style.display = 'inline-block'; }
+    else { badge.style.display = 'none'; }
   }
 
   function renderStats() {
@@ -1058,7 +1068,7 @@
     };
     addLocalTask(optimisticTask);
     closeModal('newTaskOverlay');
-    render();
+    if (taskType === 'DesignJob' && currentView !== 'design') setView('design'); else render();
     showToast(taskType === 'DesignJob' ? 'Job created' : 'Task created');
 
     const payload = { action: 'createTask', taskType, jobType, client, jobId: existingJobId, title, description: optimisticTask.Description,
@@ -1149,7 +1159,6 @@
         </div>`;
     } else if (t.Stage === 'WaitingForJobID' && isDesigner) {
       html += `
-        <button class="secondary" style="background:var(--bg); color:var(--ink); border:1.5px solid var(--line); margin-bottom:12px;" onclick="openArtworkEmailComposer('${t.ID}')">✉️ Send Artwork Email to Factory</button>
         <div class="field"><label>Job ID (factory reply)</label><input type="text" id="dsJobId" placeholder="Enter Job ID once received"></div>
         <button onclick="doReceiveJobId('${t.ID}')">Save Job ID</button>`;
     } else if (t.Stage === 'JobIDReceived' && isDesigner) {
@@ -1192,8 +1201,8 @@
   async function doApproveArtwork(id) {
     const comment = document.getElementById('dsApprovalComment').value.trim();
     patchLocalTask(id, { Stage: 'WaitingForJobID' });
-    optimisticComment(id, comment || 'Approved. Designer will email artwork to factory.');
-    refreshDetailIfOpen(id); render(); showToast('Approved — designer ko notify ho gaya hai');
+    optimisticComment(id, comment || 'Approved. Artwork emailed to factory automatically.');
+    refreshDetailIfOpen(id); render(); showToast('Approved — artwork emailed to factory');
     bg(apiPost({ action: 'approveArtwork', id, author: myName(), comment }), 'Approve failed');
   }
   async function doRejectArtwork(id) {
@@ -1390,9 +1399,17 @@
   };
   async function loadActivity() {
     const res = await apiGet('getActivity');
-    activityFeed = res.activity || [];
+    activityFeed = (res.activity || []).filter(isRelevantActivity);
     renderActivityPanel();
     updateBellBadge();
+  }
+  function isRelevantActivity(a) {
+    const me = myName();
+    if (!me) return false;
+    if (a.Actor === me) return true;
+    const task = tasks.find(t => t.ID === a.TaskID);
+    if (!task) return false; // can't confirm relevance to a task we can't find (e.g. deleted) — hide it
+    return task.AssignedTo === me || task.AssignedBy === me;
   }
   function lastSeenActivity() {
     return localStorage.getItem('pb_last_seen_activity') || '1970-01-01T00:00:00.000Z';
