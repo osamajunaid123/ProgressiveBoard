@@ -1478,7 +1478,7 @@
   // ============ INIT ============
   initIdentity();
   loadAll();
-  setInterval(loadAll, 5000); // background sync every 5 seconds — your own actions still show up instantly (optimistic)
+  setInterval(loadAll, 30000); // background sync every 30 seconds — 5s was hitting Apps Script quota limits with multiple users polling
 </script>
 
 </body>
