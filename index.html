@@ -1257,18 +1257,28 @@
     const raw = input.value.trim();
     if (!raw) return;
 
-    // extract the first @Name mention that matches a real user
+    // Find the @mention by matching against real user names directly (handles
+    // multi-word names like "Osama Junaid" correctly — picks the longest match).
     let assignedTo = '';
     let text = raw;
-    const mentionMatch = raw.match(/@([A-Za-z .]+?)(?=\s|$)/);
-    if (mentionMatch) {
-      const candidate = users.find(u => mentionMatch[1].trim().toLowerCase().startsWith(u.Name.toLowerCase()) || u.Name.toLowerCase() === mentionMatch[1].trim().toLowerCase());
-      if (candidate) {
-        assignedTo = candidate.Name;
-        text = text.replace('@' + candidate.Name, '').trim();
+    const atIndex = raw.indexOf('@');
+    if (atIndex > -1) {
+      const after = raw.slice(atIndex + 1);
+      let bestName = null;
+      users.forEach(u => {
+        if (after.toLowerCase().startsWith(u.Name.toLowerCase())) {
+          if (!bestName || u.Name.length > bestName.length) bestName = u.Name;
+        }
+      });
+      if (bestName) {
+        assignedTo = bestName;
+        text = (raw.slice(0, atIndex) + raw.slice(atIndex + 1 + bestName.length)).trim();
       }
     }
     if (!assignedTo) { showToast('@ ke sath kisi ka naam select karein', true); return; }
+
+    // strip a leading separator left behind after removing the mention (e.g. "- send me...")
+    text = text.replace(/^[\s\-–—:,]+/, '').trim();
 
     const { dueDate, cleanedText } = parseQuickAddDate(text);
     const finalDueDate = dueDate || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
