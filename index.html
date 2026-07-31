@@ -291,6 +291,7 @@
 <main>
   <div class="toolbar">
     <div class="filters">
+      <button id="myTasksBtn" class="active" onclick="toggleMyTasks()" style="background:var(--amber); color:var(--navy);">My Tasks</button>
       <select id="filterAssignee"><option value="">Everyone</option></select>
       <select id="filterProject"><option value="">All Projects</option></select>
       <select id="filterStatus">
@@ -438,7 +439,7 @@
   // ============ CONFIG ============
   const API_URL = 'https://script.google.com/macros/s/AKfycbwkIoqHjCdEDo0d2q4IV7B81VKtX5tcEJB3QQFD3extPHfbMPedMPH38slKIO7FvekC/exec';
   const ADMIN_NAME = 'Osama Junaid'; // must match the Name exactly (case-sensitive) as it appears in the Users tab
-  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1vGnf9iRrLfWW0jgpKzW6jCFXq0hnBH1_nvaq8ltLVpw/edit?gid=1202799675#gid=1202799675'; // the Google Sheet's share link
+  const SHEET_URL = 'PASTE_YOUR_GOOGLE_SHEET_URL_HERE'; // the Google Sheet's share link
 
   // ============ STATE ============
   let tasks = [];
@@ -466,6 +467,7 @@
       document.getElementById('nameGate').style.display = 'none';
       document.getElementById('whoAmI').textContent = user.name + (user.designation ? ' · ' + user.designation : '');
       document.getElementById('sheetBtn').style.display = isAdmin(user.name) ? 'inline-block' : 'none';
+      if ((user.role || '').toLowerCase() === 'designer') setView('design');
     } else {
       document.getElementById('nameGate').style.display = 'flex';
     }
@@ -499,26 +501,40 @@
     btn.disabled = false; btn.textContent = 'Log In →';
 
     if (!res.success) { errBox.textContent = res.error || 'Login fail ho gaya.'; errBox.style.display = 'block'; return; }
-    localStorage.setItem('pb_identity', JSON.stringify({ name: res.name, designation: res.designation }));
+    localStorage.setItem('pb_identity', JSON.stringify({ name: res.name, designation: res.designation, role: res.role, phone: res.phone }));
     document.getElementById('gatePassword').value = '';
     document.getElementById('nameGate').style.display = 'none';
     document.getElementById('whoAmI').textContent = res.name + (res.designation ? ' · ' + res.designation : '');
     document.getElementById('sheetBtn').style.display = isAdmin(res.name) ? 'inline-block' : 'none';
-    document.getElementById('filterAssignee').value = res.name;
-    defaultFilterApplied = true;
-    render();
+    myTasksOnly = true;
+    if ((res.role || '').toLowerCase() === 'designer') setView('design');
+    else render();
   }
   function logout() {
     localStorage.removeItem('pb_identity');
     document.getElementById('nameGate').style.display = 'flex';
     document.getElementById('whoAmI').textContent = '';
     document.getElementById('sheetBtn').style.display = 'none';
-    document.getElementById('filterAssignee').value = '';
-    defaultFilterApplied = false;
   }
   function myName() {
     const saved = localStorage.getItem('pb_identity');
     return saved ? JSON.parse(saved).name : '';
+  }
+  function myDesignation() {
+    const saved = localStorage.getItem('pb_identity');
+    return saved ? (JSON.parse(saved).designation || '') : '';
+  }
+  function myPhone() {
+    const saved = localStorage.getItem('pb_identity');
+    return saved ? (JSON.parse(saved).phone || '') : '';
+  }
+  function myRole() {
+    const saved = localStorage.getItem('pb_identity');
+    return saved ? (JSON.parse(saved).role || '') : '';
+  }
+  function userEmail(name) {
+    const u = users.find(x => x.Name === name);
+    return u ? u.Email : '';
   }
 
   // ============ API HELPERS ============
@@ -562,17 +578,13 @@
   }
 
   // ============ LOAD DATA ============
-  let defaultFilterApplied = false;
+  let myTasksOnly = true; // default scope: tasks where I'm the assignee OR the assigner
   async function loadAll() {
     const [taskRes, userRes] = await Promise.all([apiGet('getTasks'), apiGet('getUsers')]);
     tasks = taskRes.tasks || [];
     users = userRes.users || [];
     populateUserDropdowns();
     populateProjectFilter();
-    if (!defaultFilterApplied && myName()) {
-      document.getElementById('filterAssignee').value = myName();
-      defaultFilterApplied = true;
-    }
     render();
     loadActivity();
   }
@@ -655,7 +667,9 @@
     const dateFrom = document.getElementById('filterDateFrom').value;
     const dateTo = document.getElementById('filterDateTo').value;
     const search = document.getElementById('searchBox').value.toLowerCase();
+    const me = myName();
     return tasks.filter(t => {
+      if (myTasksOnly && me && !(t.AssignedTo === me || t.AssignedBy === me)) return false;
       if (assignee && t.AssignedTo !== assignee) return false;
       if (project && t.Project !== project) return false;
       if (status && t.Status !== status) return false;
@@ -668,6 +682,12 @@
       if (search && !(t.Title || '').toLowerCase().includes(search)) return false;
       return true;
     });
+  }
+  function toggleMyTasks() {
+    myTasksOnly = !myTasksOnly;
+    document.getElementById('myTasksBtn').textContent = myTasksOnly ? 'My Tasks' : 'All Tasks';
+    document.getElementById('myTasksBtn').classList.toggle('active', myTasksOnly);
+    render();
   }
 
   // Clicking a stat box in the dark strip toggles it as a quick filter.
@@ -739,12 +759,23 @@
   }
 
   function renderStats() {
-    const general = tasks.filter(t => t.TaskType !== 'DesignJob');
-    document.getElementById('statTotal').textContent = general.length;
-    document.getElementById('statPending').textContent = general.filter(t => t.Status === 'Pending').length;
-    document.getElementById('statProgress').textContent = general.filter(t => t.Status === 'In Progress').length;
-    document.getElementById('statDone').textContent = general.filter(t => t.Status === 'Done').length;
-    document.getElementById('statOverdue').textContent = general.filter(isOverdue).length;
+    const me = myName();
+    const scoped = tasks.filter(t => !myTasksOnly || !me || t.AssignedTo === me || t.AssignedBy === me);
+    if (currentView === 'design') {
+      const jobs = scoped.filter(t => t.TaskType === 'DesignJob');
+      document.getElementById('statTotal').textContent = jobs.length;
+      document.getElementById('statPending').textContent = jobs.filter(t => t.Stage === 'NewRequest' || t.Stage === 'RedesignRequired').length;
+      document.getElementById('statProgress').textContent = jobs.filter(t => !['NewRequest','RedesignRequired','Completed'].includes(t.Stage)).length;
+      document.getElementById('statDone').textContent = jobs.filter(t => t.Stage === 'Completed').length;
+      document.getElementById('statOverdue').textContent = jobs.filter(isOverdueBlock).length;
+    } else {
+      const general = scoped.filter(t => t.TaskType !== 'DesignJob');
+      document.getElementById('statTotal').textContent = general.length;
+      document.getElementById('statPending').textContent = general.filter(t => t.Status === 'Pending').length;
+      document.getElementById('statProgress').textContent = general.filter(t => t.Status === 'In Progress').length;
+      document.getElementById('statDone').textContent = general.filter(t => t.Status === 'Done').length;
+      document.getElementById('statOverdue').textContent = general.filter(isOverdue).length;
+    }
   }
 
   function ticketHTML(t) {
@@ -883,11 +914,7 @@
 
     const urgent = list.filter(t => t.Priority === 'High' && t.Stage !== 'Completed');
     const reminders = list.filter(isOverdueBlock);
-    const today = new Date(); today.setHours(0,0,0,0);
-    const todaysWork = list.filter(t => {
-      const due = new Date(t.DueDate); due.setHours(0,0,0,0);
-      return (due.getTime() === today.getTime() && t.Stage !== 'Completed') || needsMyAction(t);
-    });
+    const needsAttention = [...new Map([...urgent, ...reminders].map(t => [t.ID, t])).values()];
 
     const counts = {};
     PORTAL_TABS.forEach(tab => {
@@ -901,29 +928,28 @@
       : list.filter(t => t.Stage === portalTab);
 
     container.innerHTML = `
-      ${urgent.length ? `
+      ${needsAttention.length ? `
         <div style="background:var(--red-soft); border:1.5px solid var(--red); border-radius:var(--radius); padding:14px 16px; margin-bottom:16px;">
-          <div style="font-weight:800; color:var(--red); font-size:13px; text-transform:uppercase; letter-spacing:.03em; margin-bottom:10px;">🔥 Urgent Tasks (${urgent.length}) — assigned by ${escapeHtml(AUTO_URGENT_NAME_JS)}</div>
-          <div class="cards">${urgent.map(t => jobCardHTML(t, true)).join('')}</div>
-        </div>` : ''}
-
-      ${reminders.length ? `
-        <div style="background:var(--amber-soft); border:1.5px solid var(--amber); border-radius:var(--radius); padding:14px 16px; margin-bottom:16px;">
-          <div style="font-weight:800; color:var(--amber-dark); font-size:13px; text-transform:uppercase; letter-spacing:.03em; margin-bottom:10px;">⏰ Reminder Panel — ${reminders.length} block(s) overdue</div>
-          <div class="cards">${reminders.map(t => `
+          <div style="font-weight:800; color:var(--red); font-size:13px; text-transform:uppercase; letter-spacing:.03em; margin-bottom:10px;">⚠️ Needs Attention (${needsAttention.length})</div>
+          <div class="cards">${needsAttention.map(t => {
+            const overdueBlock = isOverdueBlock(t);
+            return `
             <div class="slip">
               <div class="top-row">
-                <div class="title">${escapeHtml(t.Title)} — Job ID ${escapeHtml(t.JobID || '-')}</div>
-                <button class="small" onclick="event.stopPropagation(); quickSendReminder('${t.ID}')">Send Reminder</button>
+                <div>
+                  <div class="title">${escapeHtml(t.Client || t.Title)} ${t.Priority === 'High' ? '🔥' : ''}</div>
+                  ${t.Client ? `<div style="font-size:12.5px; color:var(--ink-soft); margin-top:2px;">${escapeHtml(t.Title)}</div>` : ''}
+                </div>
+                ${overdueBlock ? `<button class="small" onclick="event.stopPropagation(); openReminderComposer('${t.ID}')">Send Reminder</button>` : ''}
+              </div>
+              <div class="slip-meta">
+                <span class="chip assignee">Designer: ${escapeHtml(t.AssignedTo)}</span>
+                <span class="chip assignee">By: ${escapeHtml(t.AssignedBy)}</span>
+                ${t.JobID ? `<span class="chip assignee">Job ID: ${escapeHtml(t.JobID)}</span>` : ''}
               </div>
               ${blockSlaText(t)}
-            </div>`).join('')}</div>
-        </div>` : ''}
-
-      ${todaysWork.length ? `
-        <div style="background:var(--card); border:1.5px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:16px;">
-          <div style="font-weight:800; color:var(--ink-soft); font-size:13px; text-transform:uppercase; letter-spacing:.03em; margin-bottom:10px;">📋 Today's Work (${todaysWork.length})</div>
-          <div class="cards">${todaysWork.map(t => jobCardHTML(t, true)).join('')}</div>
+            </div>`;
+          }).join('')}</div>
         </div>` : ''}
 
       <div class="view-toggle" style="flex-wrap:wrap; margin-bottom:16px; background:var(--card);">
@@ -936,15 +962,31 @@
     `;
   }
   function setPortalTab(tab) { portalTab = tab; render(); }
-  const AUTO_URGENT_NAME_JS = 'Ahsan Rahim';
-  async function quickSendReminder(id) {
-    const t = tasks.find(x => x.ID === id);
-    const newCount = (t.ReminderCount || 0) + 1;
-    patchLocalTask(id, { ReminderCount: newCount, LastReminderAt: new Date().toISOString() });
-    render();
-    showToast('Reminder sent');
-    bg(apiPost({ action: 'sendReminder', id, author: myName() }), 'Reminder failed');
+
+  // ---- Manual email composer (mailto:) — opens the user's own email client so it
+  // sends from their own account, since Apps Script can't send emails "as" someone else. ----
+  function emailSignature() {
+    return 'Best Regards\n' + myName() + (myDesignation() ? '\n' + myDesignation() : '') + (myPhone() ? '\nContact # ' + myPhone() : '');
   }
+  function composeMailto(to, cc, subject, body) {
+    const params = new URLSearchParams();
+    if (cc) params.set('cc', cc);
+    params.set('subject', subject);
+    params.set('body', body);
+    window.open('mailto:' + to + '?' + params.toString().replace(/\+/g, '%20'), '_blank');
+  }
+
+  function openReminderComposer(id) {
+    const t = tasks.find(x => x.ID === id);
+    const count = (t.ReminderCount || 0) + 1;
+    const body = 'Dear Concern,\n\nKindly share an update regarding the block status for Job ID: ' + (t.JobID || '-') + '. This is reminder #' + count + '.\n\n' + emailSignature();
+    composeMailto(FACTORY_EMAIL_JS, userEmail(t.AssignedBy), 'REMINDER #' + count + ' — Block Pending for Job ID ' + (t.JobID || ''), body);
+    patchLocalTask(id, { ReminderCount: count, LastReminderAt: new Date().toISOString() });
+    render();
+    showToast('Reminder email opened — send it from your own email client');
+    bg(apiPost({ action: 'sendReminder', id, author: myName() }), 'Reminder tracking failed');
+  }
+  const FACTORY_EMAIL_JS = 'info@dgproc.com';
 
   function setView(v) {
     currentView = v;
@@ -1091,11 +1133,11 @@
     if (t.Stage === 'NewRequest' && t.JobType === 'LogoDesign' && isDesigner) {
       html += `<button onclick="doStartDesigning('${t.ID}')">Start Designing</button>`;
     } else if (t.Stage === 'NewRequest' && t.JobType === 'FactoryBlock' && isDesigner) {
-      html += `<button onclick="doSendProductionApproval('${t.ID}')">Send Production Approval Email</button>`;
+      html += `<button onclick="openProductionApprovalComposer('${t.ID}')">Send Production Approval Email</button>`;
     } else if ((t.Stage === 'Designing' || t.Stage === 'RedesignRequired') && isDesigner) {
       html += `
-        <div class="field"><label>Attach design file (image/PDF)</label><input type="file" id="dsFile" accept="image/*,.pdf"><div id="dsFileStatus" style="font-size:12px; color:var(--ink-soft); margin-top:4px;"></div></div>
-        <div class="field"><label>Or paste a link instead (optional)</label><input type="text" id="dsFileLink" placeholder="Paste Drive/WhatsApp/image link"></div>
+        <div class="field"><label>Attach design file (image/PDF) — required</label><input type="file" id="dsFile" accept="image/*,.pdf"><div id="dsFileStatus" style="font-size:12px; color:var(--ink-soft); margin-top:4px;"></div></div>
+        <div class="field"><label>Or paste a link instead</label><input type="text" id="dsFileLink" placeholder="Paste Drive/WhatsApp/image link"></div>
         <div class="field"><label>Note (optional)</label><input type="text" id="dsNote" placeholder="e.g. v2 with logo size fixed"></div>
         <button onclick="doSubmitForApproval('${t.ID}')">Submit for Approval</button>`;
     } else if (t.Stage === 'WaitingForApproval' && isRequester) {
@@ -1107,13 +1149,14 @@
         </div>`;
     } else if (t.Stage === 'WaitingForJobID' && isDesigner) {
       html += `
+        <button class="secondary" style="background:var(--bg); color:var(--ink); border:1.5px solid var(--line); margin-bottom:12px;" onclick="openArtworkEmailComposer('${t.ID}')">✉️ Send Artwork Email to Factory</button>
         <div class="field"><label>Job ID (factory reply)</label><input type="text" id="dsJobId" placeholder="Enter Job ID once received"></div>
         <button onclick="doReceiveJobId('${t.ID}')">Save Job ID</button>`;
     } else if (t.Stage === 'JobIDReceived' && isDesigner) {
-      html += `<button onclick="doSendProductionApproval('${t.ID}')">Send Production Approval Email</button>`;
+      html += `<button onclick="openProductionApprovalComposer('${t.ID}')">Send Production Approval Email</button>`;
     } else if (t.Stage === 'WaitingForBlock' && isDesigner) {
       html += `
-        ${isOverdueBlock(t) ? `<button class="secondary" style="background:var(--amber-soft); color:var(--amber-dark); border:1.5px solid var(--amber); margin-bottom:10px;" onclick="quickSendReminder('${t.ID}')">Send Reminder (#${(t.ReminderCount||0)+1})</button>` : ''}
+        ${isOverdueBlock(t) ? `<button class="secondary" style="background:var(--amber-soft); color:var(--amber-dark); border:1.5px solid var(--amber); margin-bottom:10px;" onclick="openReminderComposer('${t.ID}')">Send Reminder (#${(t.ReminderCount||0)+1})</button>` : ''}
         <div class="field"><label>Received by</label><input type="text" id="dsReceivedBy" placeholder="Name of person who received the block" value="${escapeHtml(me)}"></div>
         <button onclick="doMarkBlockReceived('${t.ID}')">Mark Block Received</button>`;
     } else if (t.Stage === 'BlockReceived' && isDesigner) {
@@ -1139,8 +1182,9 @@
   async function doSubmitForApproval(id) {
     const uploadedUrl = await uploadAttachment(document.getElementById('dsFile'), document.getElementById('dsFileStatus'));
     const link = uploadedUrl || document.getElementById('dsFileLink').value.trim();
+    if (!link) { showToast('Design file ya link attach karna zaroori hai', true); return; }
     const note = document.getElementById('dsNote').value.trim();
-    patchLocalTask(id, { Stage: 'WaitingForApproval', AttachmentURL: link || tasks.find(t=>t.ID===id).AttachmentURL });
+    patchLocalTask(id, { Stage: 'WaitingForApproval', AttachmentURL: link });
     optimisticComment(id, note || 'Design submitted for approval.', link);
     refreshDetailIfOpen(id); render(); showToast('Submitted for approval');
     bg(apiPost({ action: 'submitForApproval', id, author: myName(), attachmentUrl: link, comment: note }), 'Submit failed');
@@ -1148,8 +1192,8 @@
   async function doApproveArtwork(id) {
     const comment = document.getElementById('dsApprovalComment').value.trim();
     patchLocalTask(id, { Stage: 'WaitingForJobID' });
-    optimisticComment(id, comment || 'Approved. Artwork sent to factory.');
-    refreshDetailIfOpen(id); render(); showToast('Approved — artwork emailed to factory');
+    optimisticComment(id, comment || 'Approved. Designer will email artwork to factory.');
+    refreshDetailIfOpen(id); render(); showToast('Approved — designer ko notify ho gaya hai');
     bg(apiPost({ action: 'approveArtwork', id, author: myName(), comment }), 'Approve failed');
   }
   async function doRejectArtwork(id) {
@@ -1160,6 +1204,15 @@
     refreshDetailIfOpen(id); render(); showToast('Redesign required');
     bg(apiPost({ action: 'rejectArtwork', id, author: myName(), comment }), 'Reject failed');
   }
+  function openArtworkEmailComposer(id) {
+    const t = tasks.find(x => x.ID === id);
+    const body = 'Dear Concern,\n\nKindly review the attached document.\n\n' + emailSignature();
+    const subject = 'Artwork Submission' + (t.Client ? ' — ' + t.Client : '') + ' — ' + t.Title;
+    composeMailto(FACTORY_EMAIL_JS, userEmail(t.AssignedBy), subject, body);
+    optimisticComment(id, 'Artwork email composed and sent to factory (attach the design file manually).');
+    showToast('Email opened — attach the file and send from your own email');
+    bg(apiPost({ action: 'addComment', taskId: id, author: myName(), comment: 'Artwork email sent to factory.' }), 'Log failed');
+  }
   async function doReceiveJobId(id) {
     const jobId = document.getElementById('dsJobId').value.trim();
     if (!jobId) { showToast('Job ID likhein', true); return; }
@@ -1168,10 +1221,14 @@
     refreshDetailIfOpen(id); render(); showToast('Job ID saved');
     bg(apiPost({ action: 'receiveJobId', id, author: myName(), jobId }), 'Save Job ID failed');
   }
-  async function doSendProductionApproval(id) {
+  function openProductionApprovalComposer(id) {
+    const t = tasks.find(x => x.ID === id);
+    const body = 'Dear Concern,\n\nPlease proceed with production against Job ID: ' + (t.JobID || '-') + '.\n\n' + emailSignature();
+    const subject = 'Production Approval — Job ID ' + (t.JobID || '');
+    composeMailto(FACTORY_EMAIL_JS, userEmail(t.AssignedBy), subject, body);
     patchLocalTask(id, { Stage: 'WaitingForBlock', ApprovedAt: new Date().toISOString(), ReminderCount: 0 });
-    optimisticComment(id, 'Production approval email sent.');
-    refreshDetailIfOpen(id); render(); showToast('Production approval sent');
+    optimisticComment(id, 'Production approval email sent for Job ID ' + (t.JobID || '-'));
+    refreshDetailIfOpen(id); render(); showToast('Email opened — production approval marked sent');
     bg(apiPost({ action: 'sendProductionApproval', id, author: myName() }), 'Send approval failed');
   }
   async function doMarkBlockReceived(id) {
@@ -1347,22 +1404,43 @@
     if (unread > 0) { badge.textContent = unread > 9 ? '9+' : unread; badge.style.display = 'inline-block'; }
     else { badge.style.display = 'none'; }
   }
+  let lastSeenAtOpen = null;
   function renderActivityPanel() {
     const panel = document.getElementById('activityPanel');
-    panel.innerHTML = `<div class="ap-head">Recent Activity</div>` + (activityFeed.length ? activityFeed.map(a => `
-      <div class="activity-item">
-        <div><b>${escapeHtml(a.Actor)}</b> ${ACTIVITY_LABELS[a.Action] || a.Action} <b>${escapeHtml(a.TaskTitle)}</b></div>
+    const seenCutoff = new Date(lastSeenAtOpen || lastSeenActivity());
+    panel.innerHTML = `<div class="ap-head">Recent Activity</div>` + (activityFeed.length ? activityFeed.map(a => {
+      const task = tasks.find(t => t.ID === a.TaskID);
+      const clientPrefix = task && task.Client ? escapeHtml(task.Client) + ' — ' : '';
+      const isUnread = new Date(a.Timestamp) > seenCutoff;
+      return `
+      <div class="activity-item" style="${isUnread ? 'background:var(--amber-soft); border-left:3px solid var(--amber);' : ''} cursor:pointer;" onclick="openFromNotification('${a.TaskID}')">
+        <div>${isUnread ? '<b style="color:var(--amber-dark);">● </b>' : ''}<b>${escapeHtml(a.Actor)}</b> ${ACTIVITY_LABELS[a.Action] || a.Action} <b>${clientPrefix}${escapeHtml(a.TaskTitle)}</b></div>
         ${a.Details ? `<div class="a-detail">${escapeHtml(a.Details)}</div>` : ''}
         <div class="a-time">${fmtDate(a.Timestamp)}</div>
-      </div>`).join('') : `<div class="empty" style="padding:20px 0;">No activity yet</div>`);
+      </div>`;
+    }).join('') : `<div class="empty" style="padding:20px 0;">No activity yet</div>`);
+  }
+  function openFromNotification(taskId) {
+    if (!taskId) return;
+    document.getElementById('activityPanel').classList.remove('show');
+    localStorage.setItem('pb_last_seen_activity', new Date().toISOString());
+    updateBellBadge();
+    const t = tasks.find(x => x.ID === taskId);
+    if (t && t.TaskType === 'DesignJob' && currentView !== 'design') setView('design');
+    openDetail(taskId);
   }
   function toggleActivityPanel() {
     const panel = document.getElementById('activityPanel');
-    panel.classList.toggle('show');
-    if (panel.classList.contains('show')) {
+    const opening = !panel.classList.contains('show');
+    if (opening) {
+      lastSeenAtOpen = lastSeenActivity();
+      renderActivityPanel();
+      document.getElementById('bellBadge').style.display = 'none';
+    } else {
       localStorage.setItem('pb_last_seen_activity', new Date().toISOString());
-      updateBellBadge();
+      lastSeenAtOpen = null;
     }
+    panel.classList.toggle('show');
   }
   document.addEventListener('click', (e) => {
     const panel = document.getElementById('activityPanel');
